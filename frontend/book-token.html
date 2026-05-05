@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UrbanFlow | Book Token</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+
+    :root{
+      --bg:#eef4ff;
+      --panel:#ffffff;
+      --panel-2:#f7faff;
+      --line:#d9e3ff;
+      --text:#16224d;
+      --muted:#68779d;
+      --blue:#2c6cff;
+      --blue-2:#6f7cff;
+      --green:#2db36c;
+      --orange:#ff9f43;
+      --red:#ff5c6a;
+      --shadow:0 18px 50px rgba(33, 53, 102, .10);
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;background:linear-gradient(180deg,#f8fbff 0%,#edf3ff 100%);color:var(--text)}
+    body{min-height:100vh}
+    .shell{max-width:1460px;margin:0 auto;padding:18px}
+    .topbar{
+      position:sticky;top:0;z-index:30;
+      background:rgba(255,255,255,.82);backdrop-filter:blur(14px);
+      border:1px solid rgba(217,227,255,.75);
+      box-shadow:0 10px 30px rgba(46,63,110,.07);
+      border-radius:22px;
+      padding:14px 20px;margin-bottom:18px;
+      display:flex;align-items:center;justify-content:space-between;gap:16px
+    }
+    .brand{display:flex;align-items:center;gap:14px}
+    .brand-mark{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#3da2ff,#4f67ff);display:grid;place-items:center;box-shadow:0 14px 28px rgba(79,103,255,.28)}
+    .brand-mark svg{width:26px;height:26px}
+    .brand h1{margin:0;font-size:18px;line-height:1}
+    .brand small{display:block;color:var(--muted);margin-top:4px;font-size:12px}
+    .nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .nav a{color:var(--text);text-decoration:none;padding:10px 14px;border-radius:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+    .nav a.active{background:#fff3f4;color:#d92d3f}
+    .cta-pill{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:16px;background:#f6f9ff;border:1px solid var(--line);font-weight:600;color:var(--text)}
+    .hero{
+      display:grid;grid-template-columns:1.65fr .75fr;gap:18px;margin-bottom:18px
+    }
+    .hero-card,.side-card,.form-card,.summary-card,.hospital-card,.step-card,.department-card,.doctor-card,.trust-card{
+      background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)
+    }
+    .hero-card{padding:26px 28px;overflow:hidden;position:relative;background:
+      radial-gradient(circle at 85% 20%, rgba(120,157,255,.18), transparent 28%),
+      linear-gradient(135deg,#ffffff 0%,#f4f8ff 100%)}
+    .hero-card:after{
+      content:"";position:absolute;right:-60px;top:16px;width:320px;height:320px;border-radius:50%;
+      background:radial-gradient(circle, rgba(102,136,255,.11), transparent 60%);
+      pointer-events:none;
+    }
+    .hero-grid{display:grid;grid-template-columns:220px 1fr;gap:22px;align-items:center}
+    .doodle-phone{
+      height:170px;border-radius:24px;border:2px solid #9cb4ff;background:linear-gradient(180deg,#ffffff,#f2f7ff);position:relative;padding:14px;overflow:hidden
+    }
+    .doodle-phone .screen{
+      border-radius:18px;height:100%;background:
+      linear-gradient(180deg,#f5f9ff,#edf4ff);
+      display:grid;place-items:center;position:relative
+    }
+    .doodle-city{position:absolute;bottom:10px;left:0;right:0;height:60px;opacity:.7}
+    .hero-title{font-size:28px;line-height:1.12;margin:0 0 10px;font-weight:800;max-width:700px}
+    .hero-sub{font-size:16px;color:var(--muted);margin:0}
+    .stepper{display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap}
+    .step{display:flex;align-items:center;gap:10px;min-width:0}
+    .step .ball{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;border:1px solid var(--line);background:#fff;color:var(--muted)}
+    .step.active .ball{background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;border:none}
+    .step.done .ball{background:#eef5ff;color:var(--blue);border-color:#c8d9ff}
+    .step label{font-size:14px;color:var(--muted);font-weight:700}
+    .step.active label,.step.done label{color:var(--blue)}
+    .step-line{width:32px;height:2px;background:#dae4ff;border-radius:99px}
+    .side-stack{display:grid;gap:16px}
+    .side-card{padding:20px}
+    .live-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .live-tag{display:flex;align-items:center;gap:8px;color:var(--green);font-weight:700}
+    .live-tag:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--green)}
+    .doctor-illustration{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center}
+    .doctor-figure{background:#f5f8ff;border:1px solid var(--line);border-radius:20px;padding:8px;display:grid;place-items:center}
+    .side-list{display:grid;gap:10px;color:var(--text)}
+    .side-item{display:flex;gap:10px;align-items:flex-start;color:var(--text)}
+    .side-item:before{content:"✓";display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#ebfff3;color:var(--green);font-size:12px;font-weight:800;flex:none}
+    .tip-card{padding:18px;background:#fff7f8;border:1px solid #ffd9de}
+    .tip-card h3{color:#d83448;margin:0 0 8px}
+    .tip-card p{margin:0;color:#5c5f72;line-height:1.45}
+    .dept-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .dept-tile{border:1px solid var(--line);border-radius:18px;padding:12px;text-align:center;background:linear-gradient(180deg,#fff,#f9fbff)}
+    .dept-tile svg{width:54px;height:54px}
+    .dept-tile span{display:block;margin-top:8px;font-weight:700;font-size:13px}
+    .trust-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .trust-mini{padding:12px;border:1px solid var(--line);border-radius:18px;background:#fbfdff;text-align:center}
+    .trust-mini strong{display:block;font-size:13px;margin-top:6px}
+    .trust-mini small{display:block;color:var(--muted);margin-top:4px;font-size:12px;line-height:1.35}
+    .workspace{display:grid;grid-template-columns:1.6fr .8fr;gap:18px}
+    .form-card{padding:22px}
+    .summary-card{padding:20px;position:sticky;top:96px;height:max-content}
+    .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+    .section-title h2,.section-title h3{margin:0}
+    .section-title small{color:var(--muted)}
+    .grid-2,.grid-3{display:grid;gap:14px}
+    .grid-2{grid-template-columns:1fr 1fr}
+    .grid-3{grid-template-columns:1fr 1fr 1fr}
+    .field{display:flex;flex-direction:column;gap:8px}
+    .field label{font-size:13px;font-weight:700;color:#4b5c87}
+    .input-wrap,.verify-wrap,.search-wrap,.select-wrap,.otp-wrap{
+      display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:#fbfdff;border-radius:16px;padding:12px 14px;min-height:54px
+    }
+    .input-wrap input,.search-wrap input,.otp-wrap input,.select-wrap select,.input-wrap select,.input-wrap textarea{border:none;outline:none;background:transparent;width:100%;font:inherit;color:var(--text)}
+    .otp-actions{display:flex;gap:8px}
+    .otp-btn,.mini-btn,.ghost-btn,.chip,.filter-chip,.action-btn,.toggle-btn{
+      border:none;border-radius:14px;padding:10px 12px;font-weight:700;cursor:pointer
+    }
+    .otp-btn{background:#edf4ff;color:var(--blue)}
+    .mini-btn{background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff}
+    .ghost-btn{background:#fff;border:1px solid var(--line);color:var(--text)}
+    .verify-badge{padding:6px 10px;border-radius:999px;background:#ecfff3;color:var(--green);font-size:12px;font-weight:800}
+    .verify-row{display:flex;gap:14px;flex-wrap:wrap}
+    .subnote{font-size:12px;color:var(--muted)}
+    .radio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .radio-pill{border:1px solid var(--line);border-radius:16px;padding:12px 14px;background:#fbfdff;display:flex;justify-content:center;gap:10px;align-items:center;cursor:pointer;font-weight:700}
+    .radio-pill.active{border-color:#9ab8ff;background:#f2f6ff;color:var(--blue)}
+    .symptom-toolbar{display:flex;gap:10px;align-items:center}
+    .search-wrap{flex:1}
+    .browse-select{width:170px}
+    .chip-row,.filter-row{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:#edf3ff;color:var(--blue);font-weight:700;padding:9px 12px}
+    .chip .x{margin-left:6px;opacity:.7}
+    .filter-chip{background:#f3f6fc;color:#53648f;padding:9px 12px}
+    .textarea-wrap{border:1px solid var(--line);background:#fbfdff;border-radius:18px;padding:12px 14px}
+    .textarea-wrap textarea{width:100%;min-height:120px;resize:vertical;border:none;background:transparent;outline:none;font:inherit;color:var(--text)}
+    .char{font-size:12px;color:var(--muted);text-align:right}
+    .triage-card{display:grid;grid-template-columns:72px 1fr;gap:14px;align-items:flex-start;border:1px solid var(--line);background:linear-gradient(180deg,#fbfdff,#f5f8ff);border-radius:20px;padding:16px}
+    .triage-meter{height:10px;border-radius:999px;background:linear-gradient(90deg,#36c86f 0%,#ffc94d 45%,#ff8e3d 70%,#ff4d5c 100%);position:relative;margin:10px 0}
+    .meter-pin{position:absolute;top:-5px;left:54%;width:12px;height:20px;border-radius:12px;background:#16224d;border:2px solid #fff;box-shadow:0 8px 16px rgba(0,0,0,.15)}
+    .triage-scale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+    .big-cta{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:18px 22px;border:none;border-radius:18px;background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;font-size:18px;font-weight:800;box-shadow:0 18px 32px rgba(47,102,255,.26);cursor:pointer}
+    .circle-arrow{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:20px}
+    .summary-profile,.summary-section{border:1px solid var(--line);border-radius:20px;padding:16px;background:#fbfdff;margin-bottom:14px}
+    .summary-profile{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center}
+    .avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#cfe0ff,#eef4ff);display:grid;place-items:center;font-weight:800;color:var(--blue);overflow:hidden}
+    .summary-chip{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;background:#edf3ff;color:var(--blue);font-size:12px;font-weight:700;margin:4px 6px 0 0}
+    .mini-title{font-size:13px;font-weight:800;color:#526289;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .metric-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .metric-box{padding:12px;border-radius:16px;background:#fff;border:1px solid var(--line)}
+    .metric-box strong{display:block;font-size:13px;color:#526289;margin-bottom:4px}
+    .metric-box span{font-weight:800}
+    .hospital-grid{display:grid;gap:14px}
+    .hospital-card{padding:16px;border-radius:22px;cursor:pointer;transition:.22s ease;display:grid;grid-template-columns:92px 1fr auto;gap:14px;align-items:center}
+    .hospital-card:hover{transform:translateY(-2px);box-shadow:0 22px 44px rgba(42,67,122,.12)}
+    .hospital-card.active{border-color:#8eb0ff;box-shadow:0 18px 40px rgba(44,108,255,.16)}
+    .hospital-thumb{height:86px;border-radius:18px;background:linear-gradient(180deg,#f5f9ff,#edf3ff);display:grid;place-items:center;border:1px solid var(--line)}
+    .hospital-thumb svg{width:76px;height:76px}
+    .hospital-meta h4{margin:0 0 6px;font-size:22px}
+    .hospital-meta p{margin:0;color:var(--muted);line-height:1.35}
+    .stats-line{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;color:#5b6990;font-weight:700;font-size:14px}
+    .wait-block{text-align:right}
+    .wait-block strong{display:block;font-size:20px}
+    .wait-tag{display:inline-flex;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;margin-top:8px}
+    .low{background:#ecfff3;color:var(--green)}
+    .moderate{background:#fff8ea;color:#d88418}
+    .high{background:#fff0f2;color:var(--red)}
+    .selected-hospital-panel{display:grid;grid-template-columns:1fr;gap:16px;border:1px solid var(--line);border-radius:24px;padding:18px;background:#fbfdff}
+    .selected-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .selected-badge{padding:8px 12px;border-radius:999px;background:#eef8ef;color:var(--green);font-weight:800;font-size:12px}
+    .hospital-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .hospital-kpi{border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px}
+    .dept-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+    .department-card{padding:12px;border:1px solid var(--line);text-align:center;background:#fff}
+    .department-card svg{width:52px;height:52px}
+    .department-card span{display:block;margin-top:8px;font-weight:700;font-size:13px}
+    .doctor-columns{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .doctor-card{padding:14px;background:#fff}
+    .doctor-card h5{margin:0 0 10px;font-size:14px;color:#526289}
+    .doctor-entry{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;margin-bottom:10px}
+    .doctor-entry:last-child{margin-bottom:0}
+    .doctor-entry .avatar{width:36px;height:36px;font-size:12px}
+    .sticky-actions{display:flex;gap:12px;margin-top:10px}
+    .summary-actions{display:grid;gap:10px}
+    .primary-btn,.secondary-btn{width:100%;padding:16px 18px;border-radius:16px;font-size:16px;font-weight:800;cursor:pointer}
+    .primary-btn{background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;border:none}
+    .secondary-btn{background:#fff;color:var(--text);border:1px solid var(--line)}
+    .token-box{padding:16px;border:1px solid var(--line);border-radius:18px;background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .token-box .token{font-size:34px;font-weight:900;color:var(--blue)}
+    .hidden{display:none!important}
+    .otp-modal{
+      position:fixed;inset:0;background:rgba(13,22,44,.38);display:none;align-items:center;justify-content:center;padding:18px;z-index:100
+    }
+    .otp-panel{max-width:430px;width:100%;background:#fff;border-radius:24px;padding:22px;border:1px solid var(--line);box-shadow:0 30px 60px rgba(0,0,0,.18)}
+    .symptom-panel{
+      position:fixed;inset:0;background:rgba(13,22,44,.36);display:none;align-items:center;justify-content:center;padding:18px;z-index:110
+    }
+    .symptom-modal{max-width:980px;width:100%;max-height:86vh;overflow:auto;background:#fff;border-radius:24px;padding:20px;border:1px solid var(--line);box-shadow:0 30px 60px rgba(0,0,0,.18)}
+    .symptom-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .symptom-pill{padding:11px 12px;border-radius:14px;border:1px solid var(--line);background:#fbfdff;font-weight:700;color:#46557d;cursor:pointer;text-align:left}
+    .symptom-pill.active{background:#edf3ff;color:var(--blue);border-color:#a7c0ff}
+    .footer-note{margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
+    @media (max-width:1180px){
+      .hero,.workspace{grid-template-columns:1fr}
+      .summary-card{position:static}
+      .dept-cards{grid-template-columns:repeat(3,1fr)}
+      .doctor-columns{grid-template-columns:1fr}
+      .trust-grid{grid-template-columns:1fr}
+      .hospital-kpis{grid-template-columns:1fr 1fr}
+      .hero-grid{grid-template-columns:1fr}
+    }
+    @media (max-width:760px){
+      .grid-2,.grid-3,.doctor-columns,.hospital-card,.summary-profile,.metric-row,.dept-grid,.hospital-kpis,.symptom-grid,.trust-grid,.hero-grid,.dept-cards{
+        grid-template-columns:1fr!important
+      }
+      .topbar{flex-direction:column;align-items:flex-start}
+      .nav{width:100%}
+      .hospital-card{grid-template-columns:1fr}
+      .wait-block{text-align:left}
+      .step-line{display:none}
+    }
+    .hospital-layout{
+  grid-template-columns: 1.15fr 0.85fr;
+}
+
+.live-queue-panel{
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:#fbfdff;
+  padding:18px;
+  box-shadow:var(--shadow);
+}
+
+.queue-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+.queue-live{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--green);
+  font-weight:800;
+  font-size:13px;
+}
+
+.queue-live::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--green);
+}
+
+.queue-stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.queue-stat{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px;
+}
+
+.queue-stat strong{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+
+.queue-stat span{
+  font-size:22px;
+  font-weight:900;
+  color:var(--text);
+}
+
+.queue-list{
+  display:grid;
+  gap:10px;
+}
+
+.queue-item-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:12px;
+  display:grid;
+  grid-template-columns:58px 1fr auto;
+  gap:12px;
+  align-items:center;
+}
+
+.queue-token{
+  width:58px;
+  height:58px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#edf3ff,#f8fbff);
+  border:1px solid var(--line);
+  display:grid;
+  place-items:center;
+  font-weight:900;
+  color:var(--blue);
+  font-size:14px;
+  text-align:center;
+  line-height:1.1;
+}
+
+.queue-person strong{
+  display:block;
+  font-size:14px;
+}
+
+.queue-person small{
+  color:var(--muted);
+  display:block;
+  margin-top:4px;
+  line-height:1.35;
+}
+
+.queue-badge{
+  display:inline-flex;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+}
+
+.queue-badge.waiting{
+  background:#edf3ff;
+  color:var(--blue);
+}
+
+.queue-badge.progress{
+  background:#fff8ea;
+  color:#d88418;
+}
+
+.queue-badge.done{
+  background:#ecfff3;
+  color:var(--green);
+}
+
+.queue-empty{
+  text-align:center;
+  color:var(--muted);
+  padding:18px;
+}
+/* ===== NAV ACTIVE STATE ===== */
+.nav a{transition:.18s;color:var(--text);text-decoration:none;padding:10px 14px;border-radius:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.nav a:hover{background:#f0f4ff;color:var(--blue)}
+.nav a.active{background:linear-gradient(135deg,#edf3ff,#f5f0ff);color:var(--blue);box-shadow:0 2px 10px rgba(44,108,255,.12)}
+
+/* ===== PAGE SECTION BASE ===== */
+.page-section{scroll-margin-top:90px;padding:48px 0}
+
+/* ===== HOME HERO ===== */
+.home-hero{
+  position:relative;min-height:440px;border-radius:32px;
+  background:linear-gradient(135deg,#0f1f6e 0%,#1a3a8c 25%,#1565c0 50%,#0288d1 75%,#00acc1 100%);
+  overflow:hidden;display:grid;grid-template-columns:1fr 380px;align-items:center;
+  gap:24px;padding:48px 42px;margin-bottom:24px;
+}
+.home-bg-deco{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hb-circle{position:absolute;border-radius:50%;opacity:.18}
+.hb-c1{width:320px;height:320px;background:radial-gradient(circle,#7c3aed,transparent);top:-60px;right:60px}
+.hb-c2{width:200px;height:200px;background:radial-gradient(circle,#ec4899,transparent);bottom:-40px;left:120px}
+.hb-c3{width:140px;height:140px;background:radial-gradient(circle,#f59e0b,transparent);top:60px;left:30px;opacity:.25}
+.hb-c4{width:260px;height:260px;background:radial-gradient(circle,#10b981,transparent);bottom:20px;right:200px;opacity:.15}
+.hb-cross{position:absolute;font-size:28px;opacity:.22;color:#fff;animation:floatCross 4s ease-in-out infinite}
+.hb-x1{top:18%;left:10%;animation-delay:0s}
+.hb-x2{top:60%;right:18%;animation-delay:1.5s}
+.hb-x3{top:30%;left:45%;animation-delay:0.8s;font-size:18px}
+.hb-pulse{position:absolute;width:80px;height:80px;border-radius:50%;border:2px solid rgba(255,255,255,.18);top:50%;right:28%;transform:translateY(-50%);animation:pulseRing 2s ease-in-out infinite}
+@keyframes floatCross{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes pulseRing{0%{transform:translateY(-50%) scale(1);opacity:.5}100%{transform:translateY(-50%) scale(2.2);opacity:0}}
+.home-content{position:relative;z-index:2;color:#fff}
+.home-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(8px);padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;margin-bottom:18px}
+.home-title{font-size:44px;font-weight:900;line-height:1.08;margin:0 0 14px;text-shadow:0 4px 20px rgba(0,0,0,.2)}
+.home-gradient{background:linear-gradient(90deg,#a5f3fc,#818cf8,#f9a8d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.home-sub{font-size:16px;color:rgba(255,255,255,.82);line-height:1.55;margin:0 0 24px;max-width:480px}
+.home-actions{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:28px}
+.home-btn-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 24px;border-radius:16px;background:#fff;color:#1a3a8c;font-weight:800;font-size:15px;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.2);transition:.22s}
+.home-btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.25)}
+.home-btn-danger{display:inline-flex;align-items:center;gap:8px;padding:14px 24px;border-radius:16px;background:linear-gradient(135deg,#ff4d5c,#ff1744);color:#fff;font-weight:800;font-size:15px;text-decoration:none;box-shadow:0 8px 24px rgba(255,70,80,.38);transition:.22s}
+.home-btn-danger:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(255,70,80,.5)}
+.home-stats{display:flex;gap:20px;flex-wrap:wrap}
+.home-stat{text-align:center}
+.home-stat span{display:block;font-size:22px;font-weight:900;color:#fff}
+.home-stat small{display:block;font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
+/* hospital visual */
+.home-visual{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
+.hosp-building{width:220px}
+.hosp-roof{background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:18px 18px 0 0;padding:16px;text-align:center;border:2px solid rgba(255,255,255,.2)}
+.hosp-cross{font-size:36px;color:#fff;font-weight:900;text-shadow:0 2px 8px rgba(0,0,0,.3)}
+.hosp-facade{background:linear-gradient(180deg,#f8fafc,#e2e8f0);border:2px solid rgba(255,255,255,.3);padding:16px;border-radius:0 0 12px 12px;min-height:120px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.hosp-windows{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%}
+.hw{height:22px;border-radius:6px;background:#cbd5e1;border:1px solid #94a3b8}
+.hw.on{background:linear-gradient(135deg,#fde68a,#fbbf24);box-shadow:0 0 8px rgba(251,191,36,.5)}
+.hosp-door{width:44px;height:38px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);border-radius:10px 10px 0 0;display:grid;place-items:center;border:2px solid rgba(255,255,255,.2)}
+.hosp-door-cross{font-size:18px;color:rgba(255,255,255,.9)}
+.hosp-ground{width:260px;height:10px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);border-radius:999px;margin-top:4px}
+.home-ambulance{font-size:40px;position:absolute;bottom:10px;left:-20px;animation:driveAmb 6s linear infinite}
+@keyframes driveAmb{0%{transform:translateX(-60px)}100%{transform:translateX(300px)}}
+
+/* ===== DEPARTMENTS SECTION ===== */
+.dept-section{background:linear-gradient(180deg,#f0f4ff 0%,#fdf4ff 100%);border-radius:32px;margin-bottom:24px;padding:48px 36px}
+.section-header-big{text-align:center;margin-bottom:36px}
+.section-emoji{font-size:44px;margin-bottom:10px}
+.section-header-big h2{margin:0 0 8px;font-size:32px;font-weight:900;color:var(--text)}
+.section-header-big p{margin:0;color:var(--muted);font-size:16px}
+.dept-big-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.dept-big-card{background:var(--dc,#f0f4ff);border:2px solid var(--db,#6c83c7);border-radius:24px;padding:24px;transition:.22s;position:relative;overflow:hidden}
+.dept-big-card:hover{transform:translateY(-4px);box-shadow:0 20px 40px rgba(0,0,0,.1)}
+.dbc-icon{font-size:40px;margin-bottom:12px}
+.dept-big-card h4{margin:0 0 6px;font-size:18px;font-weight:800;color:var(--text)}
+.dept-big-card p{margin:0 0 16px;color:var(--muted);font-size:14px;line-height:1.45}
+.dbc-btn{display:inline-flex;align-items:center;padding:10px 16px;border-radius:12px;background:var(--db,#6c83c7);color:#fff;font-weight:700;font-size:13px;text-decoration:none;transition:.18s}
+.dbc-btn:hover{opacity:.88;transform:translateX(2px)}
+.dbc-btn-red{background:#ff4d5c}
+
+/* ===== EMERGENCY SECTION ===== */
+.emg-section{background:linear-gradient(135deg,#1a0000 0%,#3d0000 50%,#1a0000 100%);border-radius:32px;margin-bottom:24px;padding:48px 36px;color:#fff}
+.emg-inner{max-width:1200px;margin:0 auto}
+.emg-alert-bar{display:flex;align-items:center;justify-content:center;gap:16px;background:rgba(255,77,92,.15);border:1px solid rgba(255,77,92,.35);border-radius:14px;padding:12px 20px;margin-bottom:32px;font-size:15px;font-weight:800;color:#ff8a94}
+.emg-pulse-dot{width:10px;height:10px;border-radius:50%;background:#ff4d5c;animation:pulseDot 1.2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.6}}
+.emg-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:32px;align-items:start}
+.emg-title{font-size:38px;font-weight:900;margin:0 0 12px;line-height:1.1}
+.emg-sub{color:rgba(255,255,255,.7);font-size:16px;margin:0 0 24px;line-height:1.55}
+.emg-call-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.emg-call-card{display:flex;align-items:center;gap:12px;border-radius:18px;padding:14px;text-decoration:none;transition:.22s;border:2px solid transparent}
+.emg-call-card:hover{transform:translateY(-2px)}
+.emg-call-card strong{display:block;font-size:14px;font-weight:800}
+.emg-call-card span{display:block;font-size:18px;font-weight:900;margin-top:2px}
+.emg-call-card.red{background:rgba(255,77,92,.18);border-color:rgba(255,77,92,.4);color:#ffa0a8}
+.emg-call-card.orange{background:rgba(255,159,67,.18);border-color:rgba(255,159,67,.4);color:#ffbd80}
+.emg-call-card.blue{background:rgba(44,108,255,.18);border-color:rgba(44,108,255,.4);color:#8eb4ff}
+.emg-call-icon{font-size:28px}
+.emg-tips{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:20px}
+.emg-tips h4{margin:0 0 14px;font-size:15px;font-weight:800;color:#ffd0d4}
+.emg-symptoms{display:flex;flex-wrap:wrap;gap:10px}
+.emg-sym{background:rgba(255,77,92,.15);border:1px solid rgba(255,77,92,.25);color:#ffb3b9;padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700}
+.emg-quick-book{background:linear-gradient(135deg,#ff4d5c,#c62828);border-radius:22px;padding:22px;margin-bottom:16px}
+.emg-qb-head{font-size:16px;font-weight:900;margin-bottom:8px;color:#fff}
+.emg-quick-book p{color:rgba(255,255,255,.8);font-size:14px;margin:0 0 16px;line-height:1.45}
+.emg-qb-btn{display:inline-flex;align-items:center;padding:12px 20px;border-radius:14px;background:#fff;color:#c62828;font-weight:800;font-size:14px;text-decoration:none;transition:.18s}
+.emg-qb-btn:hover{transform:scale(1.02)}
+.emg-map-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:20px}
+.emg-map-head{font-size:15px;font-weight:800;margin-bottom:14px;color:#fff}
+.emg-hosp-list{display:grid;gap:12px}
+.emg-hosp-item{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);border-radius:14px;padding:12px;font-size:22px}
+.emg-hosp-item div strong{display:block;font-size:13px;font-weight:800;color:#fff}
+.emg-hosp-item div small{display:block;color:rgba(255,255,255,.55);font-size:12px;margin-top:2px}
+.emg-open{margin-left:auto;background:#ecfff3;color:#2db36c;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
+
+/* ===== HELP SECTION ===== */
+.help-section{background:linear-gradient(180deg,#f8fbff 0%,#f0f7ff 100%);border-radius:32px;margin-bottom:24px;padding:48px 36px}
+.help-inner{max-width:1100px;margin:0 auto}
+.help-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.help-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;text-align:center;transition:.22s}
+.help-card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(44,108,255,.1)}
+.help-icon{font-size:36px;margin-bottom:12px}
+.help-card h4{margin:0 0 8px;font-size:16px;font-weight:800}
+.help-card p{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.45}
+.help-link{display:inline-flex;align-items:center;color:var(--blue);font-weight:700;font-size:13px;text-decoration:none}
+.help-link:hover{text-decoration:underline}
+.faq-list{display:grid;gap:12px}
+.faq-item{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.faq-q{padding:16px 20px;font-weight:700;cursor:pointer;font-size:15px}
+.faq-a{padding:0 20px 16px;color:var(--muted);font-size:14px;line-height:1.55}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .home-hero{grid-template-columns:1fr;padding:36px 24px}
+  .home-visual{display:none}
+  .dept-big-grid{grid-template-columns:repeat(2,1fr)}
+  .emg-grid{grid-template-columns:1fr}
+  .emg-call-cards{grid-template-columns:1fr}
+  .help-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .dept-big-grid,.help-grid{grid-template-columns:1fr}
+  .home-title{font-size:32px}
+}
+  
+  </style>
+</head>
+<body>
+  <div class="shell">
+<div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M26 8h12v18h18v12H38v18H26V38H8V26h18V8Z" fill="white"/>
+          </svg>
+        </div>
+        <div>
+          <h1>UrbanFlow</h1>
+          <small>Smart Healthcare, Smarter Cities</small>
+        </div>
+      </div>
+      <div class="nav">
+        <a href="home.html"><span>⌂</span>Home</a>
+        <a href="book-token.html" class="active"><span>🎟️</span>Book Token</a>
+        <a href="departments.html"><span>◫</span>Departments</a>
+        <a href="emergency.html"><span>🚨</span>Emergency</a>
+        <a href="help.html"><span>?</span>Help</a>
+      </div>
+     
+    </div>
+<div id="book-token" style="scroll-margin-top:90px"></div>
+
+      
+    <section class="workspace">
+      <div class="form-card" id="stepContact">
+        <div class="section-title">
+          <h2>Verify Contact &amp; Patient Details</h2>
+          <small>Complete verification to unlock token booking.</small>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label>Phone Number</label>
+            <div class="verify-wrap">
+              <div class="input-wrap" style="margin:0;flex:1;padding:0;border:none;background:transparent;min-height:auto">
+                <span>🇮🇳 +91</span>
+                <input id="phone" placeholder="98765 43210" />
+              </div>
+              <span class="verify-badge hidden" id="phoneVerifiedBadge">✓ Verified</span>
+              <button class="otp-btn" type="button" id="sendOtpBtn">Send OTP</button>
+            </div>
+            <div class="subnote" id="phoneNote">OTP verification required before booking.</div>
+          </div>
+
+          <div class="field">
+            <label>Email Address</label>
+            <div class="verify-wrap">
+              <div class="input-wrap" style="margin:0;flex:1;padding:0;border:none;background:transparent;min-height:auto">
+                <input id="email" type="email" placeholder="rahul.sharma@email.com" />
+              </div>
+              <span class="verify-badge hidden" id="emailVerifiedBadge">✓ Verified</span>
+              <button class="otp-btn" type="button" id="verifyEmailBtn">Verify</button>
+            </div>
+            <div class="subnote" id="emailNote">Email confirmation helps send token updates.</div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="field">
+            <label>Full Name</label>
+            <div class="input-wrap"><input id="name" placeholder="Rahul Sharma" /></div>
+          </div>
+          <div class="field">
+            <label>Age</label>
+            <div class="input-wrap"><input id="age" type="number" placeholder="29" /></div>
+          </div>
+          <div class="field">
+            <label>Gender</label>
+            <div class="radio-grid" id="genderGroup">
+              <div class="radio-pill active" data-value="Male">👤 Male</div>
+              <div class="radio-pill" data-value="Female">👤 Female</div>
+              <div class="radio-pill" data-value="Other">👥 Other</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+  <label>Detected Department</label>
+  <div class="input-wrap">
+    <input id="departmentDisplay" value="General Medicine" readonly />
+  </div>
+  <div class="subnote">This is automatically detected from the symptoms you select.</div>
+
+  <select id="department" class="hidden">
+    <option>General Medicine</option>
+    <option>Cardiology</option>
+    <option>Orthopedics</option>
+    <option>Dermatology</option>
+    <option>Pediatrics</option>
+    <option>Neurology</option>
+    <option>Ophthalmology</option>
+    <option>Dentistry</option>
+    <option>Emergency</option>
+  </select>
+</div>
+
+          <div class="field">
+            <label>Use Current Location</label>
+            <button class="secondary-btn" type="button" id="detectLocationBtn" style="margin:0">Detect My Location</button>
+            <div class="subnote" id="locationStatus">Location not detected yet.</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Select Your Symptoms (100+ symptoms)</label>
+          <div class="symptom-toolbar">
+            <div class="search-wrap">
+              <span>🔎</span>
+              <input id="symptomSearch" placeholder="Search symptoms (e.g. fever, headache, stomach pain...)" />
+            </div>
+            <div class="select-wrap browse-select">
+              <select id="browseSymptoms">
+                <option value="">Browse All</option>
+              </select>
+            </div>
+            <button class="ghost-btn" type="button" id="openAllSymptomsBtn">View 100+</button>
+          </div>
+          <div class="chip-row" id="selectedSymptoms"></div>
+          <div class="subnote">Popular suggestions</div>
+         <div class="filter-row" id="popularSymptoms"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label>Additional Notes (Optional)</label>
+            <div class="textarea-wrap">
+              <textarea id="additionalNotes" maxlength="300" placeholder="Share any additional details, how long symptoms have been present, medications, allergies, etc."></textarea>
+              <div class="char"><span id="noteCount">0</span> / 300</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>AI Triage Assessment <span style="color:var(--green);font-size:12px">BETA</span></label>
+            <div class="triage-card">
+              <div style="display:grid;place-items:center">
+                <svg viewBox="0 0 64 64" width="54" height="54">
+                  <circle cx="32" cy="32" r="26" fill="#f2eaff" stroke="#c7adff" stroke-width="2"/>
+                  <path d="M22 26c0-6 4-10 10-10 5 0 9 3 10 8 5 2 8 6 8 11 0 7-5 12-13 12H27c-6 0-11-5-11-11 0-5 3-9 6-10Z" fill="#8e68ff" opacity=".18"/>
+                  <path d="M28 22c-3 2-4 4-4 7 0 2 1 4 3 5m9-12c3 2 4 4 4 7 0 2-1 4-3 5m-9 1c1 2 2 4 4 5m4-5c-1 2-2 4-4 5m0-22v9m-6 4h12" stroke="#8e68ff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:18px">Likely Severity: <span id="triageLabel" style="color:var(--orange)">Moderate</span></div>
+                <div class="subnote" id="triageSummary">Based on symptoms you’ve selected, we recommend consulting a specialist soon.</div>
+                <div class="triage-meter"><div class="meter-pin" id="triagePin"></div></div>
+                <div class="triage-scale"><span>Mild</span><span>Moderate</span><span>Severe</span><span>Critical</span></div>
+                <div class="subnote" style="margin-top:8px">This is not a diagnosis. Please consult a doctor.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sticky-actions">
+          <button class="big-cta" type="button" id="goToHospitalsBtn">
+            <span>Continue to Nearby Hospitals</span>
+            <span class="circle-arrow">→</span>
+          </button>
+        </div>
+      </div>
+
+      <aside class="summary-card">
+        <div class="section-title">
+          <h3>Booking Summary</h3>
+          <small id="summaryStep">Step 1 of 5</small>
+        </div>
+
+        <div class="summary-profile">
+          <div class="avatar" id="summaryAvatar">RS</div>
+          <div>
+            <strong id="summaryName">Rahul Sharma</strong>
+            <div class="subnote" id="summaryMeta">29 Years • Male</div>
+          </div>
+          <span class="verify-badge" id="summaryVerified">Pending</span>
+        </div>
+
+        <div class="summary-section">
+          <div class="mini-title">1 • Symptoms Selected</div>
+          <div id="summarySymptoms"></div>
+        </div>
+
+        <div class="summary-section">
+          <div class="mini-title">2 • AI Priority &amp; Triage</div>
+          <div class="triage-meter" style="margin-top:6px"><div class="meter-pin" id="summaryPin"></div></div>
+          <div class="triage-scale"><span>Mild</span><span>Moderate</span><span>Severe</span><span>Critical</span></div>
+          <div class="subnote" id="summaryRecommendation" style="margin-top:10px">Recommendation: complete contact verification first.</div>
+        </div>
+
+        <div class="summary-section">
+          <div class="mini-title">3 • Selected Hospital</div>
+          <div id="selectedHospitalSummary" class="subnote">No hospital selected yet.</div>
+        </div>
+
+        <div class="summary-section">
+          <div class="mini-title">4 • Selected Department</div>
+          <div id="selectedDepartmentSummary" style="font-weight:800">Cardiology</div>
+        </div>
+
+        <div class="summary-section">
+          <div class="mini-title">5 • Assigned Doctor</div>
+          <div id="assignedDoctorSummary" class="subnote">Doctor will appear after hospital selection.</div>
+        </div>
+
+        <div class="summary-section">
+          <div class="mini-title">6 • Approx. Wait Time</div>
+          <div id="waitTimeSummary" class="subnote">Estimated after hospital selection.</div>
+        </div>
+
+        <div class="summary-section">
+          <div class="mini-title">7 • Token Preview</div>
+          <div class="token-box">
+            <div>
+              <div class="subnote">Your Token Number</div>
+              <div class="token" id="tokenPreview">UF-0000</div>
+            </div>
+            <div>
+              <div class="subnote">Estimated Time</div>
+              <div style="font-weight:800" id="etaPreview">--:--</div>
+              <div class="subnote" id="etaDatePreview">After confirmation</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-actions">
+          <button class="primary-btn" id="confirmBookingBtn" type="button">Confirm Booking</button>
+          <button class="secondary-btn" id="backToFormBtn" type="button">Back</button>
+        </div>
+      </aside>
+    </section>
+
+    <section class="form-card hidden" id="hospitalStep">
+      <div class="section-title">
+        <div>
+          <h2>Nearby Hospitals within 30 km</h2>
+          <small>Compare departments, doctors, wait time and select the best care center.</small>
+        </div>
+      </div>
+
+      <div class="grid-2 hospital-layout" style="align-items:start"></div>
+        <div>
+          <div class="symptom-toolbar" style="margin-bottom:12px">
+            <div class="search-wrap">
+              <span>🔎</span>
+              <input id="hospitalSearch" placeholder="Search hospitals by name, area or specialty..." />
+            </div>
+            <button class="ghost-btn" type="button" id="findHospitalsBtn">Find Hospitals</button>
+          </div>
+          <div class="filter-row" style="margin-bottom:14px">
+            <button class="filter-chip">All</button>
+            <button class="filter-chip">24x7</button>
+            <button class="filter-chip">Cashless</button>
+            <button class="filter-chip">High Rated (4.5+)</button>
+            <button class="filter-chip">Less Wait Time</button>
+          </div>
+          <div class="hospital-grid" id="hospitalsList"></div>
+        </div>
+
+        <div class="selected-hospital-panel">
+          <div class="selected-head">
+            <div>
+              <h3 id="selectedHospitalName">No hospital selected</h3>
+              <div class="subnote" id="selectedHospitalAddress">Detect your location and choose a hospital.</div>
+            </div>
+            <span class="selected-badge hidden" id="selectedBadge">Selected</span>
+          </div>
+
+          <div class="hospital-kpis">
+            <div class="hospital-kpi"><strong>Distance</strong><span id="selectedDistance">--</span></div>
+            <div class="hospital-kpi"><strong>Status</strong><span id="selectedOpenStatus">24x7</span></div>
+            <div class="hospital-kpi"><strong>Rating</strong><span id="selectedRating">--</span></div>
+            <div class="hospital-kpi"><strong>Est. Wait</strong><span id="selectedWait">--</span></div>
+          </div>
+
+          <div>
+            <div class="mini-title">Departments Available</div>
+            <div class="dept-cards" id="departmentTiles"></div>
+          </div>
+
+          <div>
+            <div class="section-title">
+              <h3>Doctors Available Today</h3>
+              <small id="doctorCountText"></small>
+            </div>
+            <div class="doctor-columns" id="doctorColumns"></div>
+          </div>
+        </div>
+      </div><div>
+  <div class="selected-hospital-panel">
+    <div class="selected-head">
+      <div>
+        <h3 id="selectedHospitalName">No hospital selected</h3>
+        <div class="subnote" id="selectedHospitalAddress">Detect your location and choose a hospital.</div>
+      </div>
+      <span class="selected-badge hidden" id="selectedBadge">Selected</span>
+    </div>
+
+    <!-- all the rest already inside selected-hospital-panel -->
+    <!-- hospital kpis -->
+    <!-- department tiles -->
+    <!-- doctors available -->
+  </div>
+
+  <!-- PASTE LIVE QUEUE PANEL HERE -->
+  <div class="live-queue-panel" style="margin-top:16px;">
+    <div class="queue-head">
+      <div>
+        <h3 style="margin:0;">Live Queue Simulation</h3>
+        <small class="subnote">Preview of current patient flow for selected hospital.</small>
+      </div>
+      <div class="queue-live">Live</div>
+    </div>
+
+    <div class="queue-stats">
+      <div class="queue-stat">
+        <strong>Waiting</strong>
+        <span id="queueWaitingCount">0</span>
+      </div>
+      <div class="queue-stat">
+        <strong>In Progress</strong>
+        <span id="queueProgressCount">0</span>
+      </div>
+      <div class="queue-stat">
+        <strong>Completed</strong>
+        <span id="queueDoneCount">0</span>
+      </div>
+    </div>
+
+    <div class="queue-list" id="liveQueueSim">
+      <div class="queue-empty">Select a hospital to view simulated queue.</div>
+    </div>
+  </div>
+</div>
+    </section>
+
+    <div class="otp-modal" id="otpModal">
+      <div class="otp-panel">
+        <h3 style="margin-top:0">Verify Phone Number</h3>
+        <p class="subnote">Enter the 6-digit OTP sent to your phone. For demo mode, use <strong>1234</strong>.</p>
+        <div class="otp-wrap"><input id="otpInput" placeholder="Enter a 6 digit OTP" maxlength="6" /></div>
+        <div class="verify-row" style="margin-top:14px">
+          <button class="mini-btn" id="confirmOtpBtn" type="button">Verify OTP</button>
+          <button class="ghost-btn" id="closeOtpBtn" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="symptom-panel" id="symptomModal">
+      <div class="symptom-modal">
+        <div class="section-title">
+          <h3>Browse 100+ Symptoms</h3>
+          <button class="ghost-btn" type="button" id="closeSymptomsBtn">Close</button>
+        </div>
+        <div class="search-wrap" style="margin-bottom:14px">
+          <span>🔎</span>
+          <input id="allSymptomsSearch" placeholder="Search from all symptoms..." />
+        </div>
+        <div class="symptom-grid" id="allSymptomsGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  
+  <script>
+
+  const API_BASE = 'http://localhost:5001/api';
+  const socket = io('http://localhost:5001');
+
+  let currentLocation = null;
+  let allHospitals = [];
+  let selectedHospitalRecord = null;
+  let selectedGender = 'Male';
+  let selectedSymptoms = [];
+  let phoneVerified = false;
+  let emailVerified = false;
+const DEPARTMENTS = [
+  { name: 'Cardiology', icon: '❤️' },
+  { name: 'Orthopedics', icon: '🦴' },
+  { name: 'Dermatology', icon: '🧴' },
+  { name: 'Pediatrics', icon: '👶' },
+  { name: 'General Medicine', icon: '🩺' },
+  { name: 'Neurology', icon: '🧠' },
+  { name: 'Ophthalmology', icon: '👁️' },
+  { name: 'Dentistry', icon: '🦷' }
+];
+  const ALL_SYMPTOMS = [
+    'Fever','Chest Pain','Cough','Dizziness','Headache','Nausea','Vomiting','Breathlessness','Fatigue','Body Ache',
+    'Sore Throat','Cold','Stomach Pain','Back Pain','Joint Pain','Tooth Pain','Ear Pain','Skin Rash','Itching','Acidity',
+    'Constipation','Diarrhea','Palpitations','High Blood Pressure','Low Blood Pressure','Blurred Vision','Eye Redness','Neck Pain','Shoulder Pain','Leg Pain',
+    'Knee Pain','Hand Swelling','Foot Swelling','Anxiety','Stress','Sleeplessness','Depression','Loss of Appetite','Weight Loss','Weight Gain',
+    'Hair Fall','Dry Skin','Burning Urination','Frequent Urination','Abdominal Bloating','Migraine','Sinus Pain','Nasal Congestion','Sneezing','Chills',
+    'Sweating','Loss of Taste','Loss of Smell','Tingling','Numbness','Fainting','Seizure','Severe Bleeding','Injury','Fracture',
+    'Pregnancy Emergency','Pelvic Pain','Menstrual Cramps','Irregular Periods','Breast Pain','Shortness of Breath','Wheezing','Asthma Attack','Heartburn','Gas',
+    'Ulcer Pain','Jaundice','Dark Urine','Swollen Glands','Mouth Ulcers','Dry Cough','Wet Cough','Blood in Cough','Blood in Urine','Blood in Stool',
+    'Ringing Ears','Hearing Loss','Vertigo','Confusion','Memory Loss','Weakness','Paralysis','Facial Droop','Stroke Symptoms','High Fever',
+    'Low Oxygen','Rapid Pulse','Slow Pulse','Panic Attack','Restlessness','Burn Injury','Animal Bite','Poisoning','Allergy','Anaphylaxis'
+  ];
+
+let liveQueueItems = [];
+
+function renderLiveQueueSimulation() {
+  const queueWrap = document.getElementById('liveQueueSim');
+  const waitingEl = document.getElementById('queueWaitingCount');
+  const progressEl = document.getElementById('queueProgressCount');
+  const doneEl = document.getElementById('queueDoneCount');
+
+  if (!queueWrap || !waitingEl || !progressEl || !doneEl) return;
+
+  const waiting = liveQueueItems.filter(q => q.status === 'waiting').length;
+  const progress = liveQueueItems.filter(q => q.status === 'progress').length;
+  const done = liveQueueItems.filter(q => q.status === 'done').length;
+
+  waitingEl.textContent = waiting;
+  progressEl.textContent = progress;
+  doneEl.textContent = done;
+
+  if (!liveQueueItems.length) {
+    queueWrap.innerHTML = `<div class="queue-empty">No patients in queue yet. Book a token to appear here.</div>`;
+    return;
+  }
+
+  queueWrap.innerHTML = liveQueueItems.map(item => `
+    <div class="queue-item-card">
+      <div class="queue-token">${item.token}</div>
+      <div class="queue-person">
+        <strong>${item.name}</strong>
+        <small>${item.department} • ${item.symptom}</small>
+      </div>
+      <div class="queue-badge ${item.status}">
+        ${item.status === 'waiting' ? 'Waiting' : item.status === 'progress' ? 'In Progress' : 'Completed'}
+      </div>
+    </div>
+  `).join('');
+}
+  const form = document.getElementById('patientForm');
+  const phoneInput = document.getElementById('phone');
+  const emailInput = document.getElementById('email');
+  const nameInput = document.getElementById('name');
+  const ageInput = document.getElementById('age');
+  const departmentSelect = document.getElementById('department');
+  const additionalNotes = document.getElementById('additionalNotes');
+  const symptomSearch = document.getElementById('symptomSearch');
+  const browseSymptoms = document.getElementById('browseSymptoms');
+  const selectedSymptomsEl = document.getElementById('selectedSymptoms');
+  const popularSymptomsEl = document.getElementById('popularSymptoms');
+  const allSymptomsGrid = document.getElementById('allSymptomsGrid');
+  const allSymptomsSearch = document.getElementById('allSymptomsSearch');
+  const locationStatus = document.getElementById('locationStatus');
+  const hospitalsList = document.getElementById('hospitalsList');
+
+  const phoneVerifiedBadge = document.getElementById('phoneVerifiedBadge');
+  const emailVerifiedBadge = document.getElementById('emailVerifiedBadge');
+  const phoneNote = document.getElementById('phoneNote');
+  const emailNote = document.getElementById('emailNote');
+
+  const triageLabel = document.getElementById('triageLabel');
+  const triageSummary = document.getElementById('triageSummary');
+  const triagePin = document.getElementById('triagePin');
+
+  const summaryStep = document.getElementById('summaryStep');
+  const summaryAvatar = document.getElementById('summaryAvatar');
+  const summaryName = document.getElementById('summaryName');
+  const summaryMeta = document.getElementById('summaryMeta');
+  const summaryVerified = document.getElementById('summaryVerified');
+  const summarySymptoms = document.getElementById('summarySymptoms');
+  const summaryRecommendation = document.getElementById('summaryRecommendation');
+  const summaryPin = document.getElementById('summaryPin');
+  const selectedHospitalSummary = document.getElementById('selectedHospitalSummary');
+  const selectedDepartmentSummary = document.getElementById('selectedDepartmentSummary');
+  const assignedDoctorSummary = document.getElementById('assignedDoctorSummary');
+  const waitTimeSummary = document.getElementById('waitTimeSummary');
+  const tokenPreview = document.getElementById('tokenPreview');
+  const etaPreview = document.getElementById('etaPreview');
+  const etaDatePreview = document.getElementById('etaDatePreview');
+
+  const hospitalStep = document.getElementById('hospitalStep');
+  const selectedHospitalNameEl = document.getElementById('selectedHospitalName');
+  const selectedHospitalAddressEl = document.getElementById('selectedHospitalAddress');
+  const selectedBadge = document.getElementById('selectedBadge');
+  const selectedDistance = document.getElementById('selectedDistance');
+  const selectedOpenStatus = document.getElementById('selectedOpenStatus');
+  const selectedRating = document.getElementById('selectedRating');
+  const selectedWait = document.getElementById('selectedWait');
+  const departmentTiles = document.getElementById('departmentTiles');
+  const doctorColumns = document.getElementById('doctorColumns');
+  const doctorCountText = document.getElementById('doctorCountText');
+
+  const otpModal = document.getElementById('otpModal');
+  const otpInput = document.getElementById('otpInput');
+  const symptomModal = document.getElementById('symptomModal');
+
+  function getInitials(name) {
+    return (name || 'RS')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(word => word[0].toUpperCase())
+      .join('');
+  }
+
+  function showTriage(level) {
+    const levels = {
+      Mild: { color: '#2db36c', left: '16%', text: 'Your selected symptoms look mild. A general consultation is recommended.' },
+      Moderate: { color: '#ff9f43', left: '52%', text: 'Based on symptoms, consulting a specialist soon is recommended.' },
+      Severe: { color: '#ff7a2f', left: '72%', text: 'These symptoms look serious. Seek care as early as possible.' },
+      Critical: { color: '#ff5c6a', left: '88%', text: 'Potential emergency. Reach emergency care immediately.' }
+    };
+    const config = levels[level] || levels.Moderate;
+    triageLabel.textContent = level;
+    triageLabel.style.color = config.color;
+    triageSummary.textContent = config.text;
+    triagePin.style.left = config.left;
+    summaryRecommendation.textContent = config.text;
+    summaryPin.style.left = config.left;
+  }
+
+  function computeTriage() {
+    const text = (selectedSymptoms.join(' ') + ' ' + additionalNotes.value).toLowerCase();
+    if (/(stroke|heart attack|severe bleeding|anaphylaxis|seizure|low oxygen|unconscious)/.test(text)) return 'Critical';
+    if (/(chest pain|breathlessness|fracture|poisoning|blood in cough|blood in urine|high fever|stroke symptoms)/.test(text)) return 'Severe';
+    if (selectedSymptoms.length >= 4) return 'Moderate';
+    return 'Mild';
+  }
+function detectDepartmentFromSymptoms() {
+  const symptomsText = selectedSymptoms.join(' ').toLowerCase();
+  const notesText = additionalNotes.value.toLowerCase();
+  const text = `${symptomsText} ${notesText}`;
+  const level = computeTriage();
+
+  if (level === 'Severe' || level === 'Critical') {
+    return 'Emergency';
+  }
+
+  const departmentRules = [
+    {
+      department: 'Cardiology',
+      keywords: [
+        'chest pain', 'palpitations', 'rapid pulse', 'slow pulse',
+        'high blood pressure', 'low blood pressure', 'heartburn'
+      ]
+    },
+    {
+      department: 'Orthopedics',
+      keywords: [
+        'back pain', 'joint pain', 'tooth pain', 'neck pain', 'shoulder pain',
+        'leg pain', 'knee pain', 'hand swelling', 'foot swelling',
+        'injury', 'fracture'
+      ]
+    },
+    {
+      department: 'Dermatology',
+      keywords: [
+        'skin rash', 'itching', 'hair fall', 'dry skin'
+      ]
+    },
+    {
+      department: 'Pediatrics',
+      keywords: [
+        'child fever', 'baby cough', 'pediatric', 'pediatrics'
+      ]
+    },
+    {
+      department: 'Neurology',
+      keywords: [
+        'migraine', 'tingling', 'numbness', 'fainting', 'seizure',
+        'vertigo', 'confusion', 'memory loss', 'weakness',
+        'paralysis', 'facial droop', 'stroke symptoms'
+      ]
+    },
+    {
+      department: 'Ophthalmology',
+      keywords: [
+        'blurred vision', 'eye redness', 'loss of vision', 'eye pain'
+      ]
+    },
+    {
+      department: 'General Medicine',
+      keywords: [
+        'fever', 'cough', 'dizziness', 'headache', 'nausea', 'vomiting',
+        'fatigue', 'body ache', 'sore throat', 'cold', 'stomach pain',
+        'ear pain', 'acidity', 'constipation', 'diarrhea',
+        'anxiety', 'stress', 'sleeplessness', 'depression',
+        'loss of appetite', 'weight loss', 'weight gain',
+        'abdominal bloating', 'sinus pain', 'nasal congestion',
+        'sneezing', 'chills', 'sweating', 'loss of taste', 'loss of smell',
+        'burning urination', 'frequent urination',
+        'pelvic pain', 'menstrual cramps', 'irregular periods',
+        'breast pain', 'shortness of breath', 'wheezing', 'asthma attack',
+        'gas', 'ulcer pain', 'jaundice', 'dark urine',
+        'swollen glands', 'mouth ulcers', 'dry cough', 'wet cough',
+        'ringing ears', 'hearing loss', 'panic attack', 'restlessness',
+        'allergy'
+      ]
+    }
+  ];
+
+  const scores = {};
+  departmentRules.forEach(rule => {
+    scores[rule.department] = 0;
+    rule.keywords.forEach(keyword => {
+      if (text.includes(keyword)) {
+        scores[rule.department] += 1;
+      }
+    });
+  });
+
+  let bestDepartment = 'General Medicine';
+  let bestScore = 0;
+
+  for (const department in scores) {
+    if (scores[department] > bestScore) {
+      bestScore = scores[department];
+      bestDepartment = department;
+    }
+  }
+
+  return bestDepartment;
+}
+  function updateSummary() {
+    summaryName.textContent = nameInput.value.trim() || 'Rahul Sharma';
+    summaryMeta.textContent = `${ageInput.value || '29'} Years • ${selectedGender}`;
+    summaryAvatar.textContent = getInitials(nameInput.value || 'Rahul Sharma');
+    summaryVerified.textContent = phoneVerified && emailVerified ? 'Verified' : 'Pending';
+    summaryVerified.style.background = phoneVerified && emailVerified ? '#ecfff3' : '#fff6e8';
+summaryVerified.style.color = phoneVerified && emailVerified ? '#2db36c' : '#c78417';
+
+const level = computeTriage();
+const detectedDepartment = detectDepartmentFromSymptoms();
+
+departmentSelect.value = detectedDepartment;
+departmentDisplay.value = detectedDepartment;
+selectedDepartmentSummary.textContent = detectedDepartment;
+
+summarySymptoms.innerHTML = selectedSymptoms.length
+      ? selectedSymptoms.map(s => `<span class="summary-chip">${s}</span>`).join('')
+      : '<span class="subnote">No symptoms selected yet.</span>';
+
+    tokenPreview.textContent = `UF-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    const now = new Date();
+    etaPreview.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    etaDatePreview.textContent = now.toDateString();
+
+   showTriage(level);
+  }
+
+  function renderPopularSymptoms() {
+    const top = ['Fever','Chest Pain','Cough','Dizziness','Headache','Nausea','Body Ache','Breathlessness'];
+    popularSymptomsEl.innerHTML = top.map(symptom =>
+      `<button class="filter-chip" type="button" data-symptom="${symptom}">${symptom}</button>`
+    ).join('');
+    popularSymptomsEl.querySelectorAll('[data-symptom]').forEach(btn => {
+      btn.addEventListener('click', () => toggleSymptom(btn.dataset.symptom));
+    });
+  }
+
+  function renderSelectedSymptoms() {
+    selectedSymptomsEl.innerHTML = selectedSymptoms.length
+      ? selectedSymptoms.map(symptom => `<button class="chip" type="button" data-remove="${symptom}">${symptom}<span class="x">×</span></button>`).join('')
+      : '<span class="subnote">No symptoms selected yet.</span>';
+
+    selectedSymptomsEl.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => toggleSymptom(btn.dataset.remove));
+    });
+
+    updateSummary();
+  }
+
+  function renderAllSymptoms(list = ALL_SYMPTOMS) {
+    allSymptomsGrid.innerHTML = list.map(symptom =>
+      `<button class="symptom-pill ${selectedSymptoms.includes(symptom) ? 'active' : ''}" type="button" data-symptom="${symptom}">${symptom}</button>`
+    ).join('');
+
+    allSymptomsGrid.querySelectorAll('[data-symptom]').forEach(btn => {
+      btn.addEventListener('click', () => toggleSymptom(btn.dataset.symptom));
+    });
+  }
+
+  function toggleSymptom(symptom) {
+    if (!symptom) return;
+    if (selectedSymptoms.includes(symptom)) {
+      selectedSymptoms = selectedSymptoms.filter(s => s !== symptom);
+    } else {
+      selectedSymptoms.push(symptom);
+    }
+    renderSelectedSymptoms();
+    renderAllSymptoms(allSymptomsSearch.value
+      ? ALL_SYMPTOMS.filter(s => s.toLowerCase().includes(allSymptomsSearch.value.toLowerCase()))
+      : ALL_SYMPTOMS
+    );
+  }
+
+  function validateStepOne() {
+    if (!nameInput.value.trim() || !ageInput.value.trim() || !phoneInput.value.trim()) {
+      alert('Please fill Name, Age, and Phone first.');
+      return false;
+    }
+    if (!selectedSymptoms.length) {
+      alert('Please select at least one symptom.');
+      return false;
+    }
+    if (!currentLocation) {
+      alert('Please detect your location first.');
+      return false;
+    }
+    return true;
+  }
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+async function fetchNearbyHospitals() {
+  if (!currentLocation) {
+    alert('Please detect your location first.');
+    return;
+  }
+
+  hospitalsList.innerHTML = '<div class="hospital-card">Loading nearby hospitals...</div>';
+
+  const { latitude, longitude } = currentLocation;
+  const RADIUS_METERS = 30000;
+
+  const query = `
+    [out:json][timeout:30];
+    (
+      node["amenity"~"hospital|clinic"](around:${RADIUS_METERS},${latitude},${longitude});
+      way["amenity"~"hospital|clinic"](around:${RADIUS_METERS},${latitude},${longitude});
+      node["healthcare"="hospital"](around:${RADIUS_METERS},${latitude},${longitude});
+      way["healthcare"="hospital"](around:${RADIUS_METERS},${latitude},${longitude});
+    );
+    out center tags;
+  `;
+
+  const MIRRORS = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+  ];
+
+  let data = null;
+  let lastError = '';
+
+  for (const mirror of MIRRORS) {
+    try {
+      console.log(`Trying: ${mirror}`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+
+      // ✅ POST instead of GET — avoids URL length limits and most CORS blocks
+      const response = await fetch(mirror, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: controller.signal
+      });
+
+      clearTimeout(timer);
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      data = await response.json();
+      console.log(`✅ Success from ${mirror}, elements: ${data.elements?.length}`);
+      break;
+
+    } catch (err) {
+      lastError = err.message;
+      console.warn(`❌ Failed (${mirror}): ${err.message}`);
+    }
+  }
+
+  try {
+    if (!data || !data.elements?.length) {
+      throw new Error(`All mirrors failed. Last error: ${lastError}`);
+    }
+
+    const seen = new Set();
+
+    allHospitals = data.elements
+      .map((place, index) => {
+        const lat = place.lat ?? place.center?.lat;
+        const lon = place.lon ?? place.center?.lon;
+        if (!lat || !lon) return null;
+
+        const name = place.tags?.name || place.tags?.['name:en'] || `Hospital ${index + 1}`;
+        const key = name.toLowerCase().trim();
+        if (seen.has(key)) return null;
+        seen.add(key);
+
+        const addressParts = [
+          place.tags?.['addr:housenumber'],
+          place.tags?.['addr:street'],
+          place.tags?.['addr:suburb'],
+          place.tags?.['addr:city'],
+          place.tags?.['addr:state']
+        ].filter(Boolean);
+
+        const distance = getDistanceKm(latitude, longitude, lat, lon);
+        if (distance > 30) return null;
+
+        const waitMinutes = Math.max(10, Math.round(distance * 4 + 8));
+        const rating = (4.2 + ((index % 6) * 0.1)).toFixed(1);
+
+        return {
+          name,
+          address: addressParts.length ? addressParts.join(', ') : 'Nearby facility',
+          latitude: lat,
+          longitude: lon,
+          distance,
+          waitMinutes,
+          rating,
+          phone: place.tags?.phone || null,
+          emergency: place.tags?.emergency === 'yes',
+          waitLabel: waitMinutes <= 20 ? 'Low' : waitMinutes <= 40 ? 'Moderate' : 'High'
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 20);
+
+    if (!allHospitals.length) throw new Error('No valid hospitals after filtering');
+
+    console.log(`✅ Rendering ${allHospitals.length} hospitals`);
+    renderHospitalCards(allHospitals);
+    if (allHospitals.length) await selectHospital(allHospitals[0]);
+
+  } catch (error) {
+    console.error('🔴 Hospital fetch failed:', error.message);
+
+    // Fallback mock data
+    allHospitals = [
+      { name: 'CityCare Multispeciality Hospital', address: 'Ring Road, Sector 15, Noida', distance: 2.3, waitMinutes: 18, rating: '4.7', waitLabel: 'Low', emergency: true },
+      { name: 'Sunrise Hospital', address: 'Sector 18, Noida', distance: 4.1, waitMinutes: 28, rating: '4.5', waitLabel: 'Moderate', emergency: false },
+      { name: 'Green Valley Medical Center', address: 'Sector 62, Noida', distance: 6.7, waitMinutes: 34, rating: '4.6', waitLabel: 'Moderate', emergency: true },
+      { name: 'Apollo Care Point', address: 'Sector 44, Noida', distance: 8.9, waitMinutes: 44, rating: '4.4', waitLabel: 'High', emergency: false },
+      { name: 'Lifeline Emergency Center', address: 'Sector 71, Noida', distance: 9.8, waitMinutes: 52, rating: '4.3', waitLabel: 'High', emergency: true }
+    ];
+    renderHospitalCards(allHospitals);
+    if (allHospitals.length) await selectHospital(allHospitals[0]);
+  }
+}
+  
+  function renderHospitalCards(list) {
+  if (!list.length) {
+    hospitalsList.innerHTML = '<div class="hospital-card">No hospitals found.</div>';
+    return;
+  }
+
+  hospitalsList.innerHTML = list.map((hospital) => `
+    <div class="hospital-card ${selectedHospitalRecord?.name === hospital.name ? 'active' : ''}" data-hospital="${hospital.name}">
+      <div class="hospital-thumb">${hospitalThumbSVG()}</div>
+      <div class="hospital-meta">
+        <h4>${hospital.name}</h4>
+        <p>${hospital.address}</p>
+        <div class="stats-line">
+          <span>📍 ${hospital.distance ? hospital.distance.toFixed(1) + ' km' : '--'}</span>
+          <span>🕒 24x7</span>
+          <span>⭐ ${hospital.rating || '--'}</span>
+        </div>
+      </div>
+      <div class="wait-block">
+        <strong>${hospital.waitMinutes || '--'} min</strong>
+        <div class="wait-tag ${(hospital.waitLabel || 'Low').toLowerCase()}">${hospital.waitLabel || 'Low'}</div>
+      </div>
+    </div>
+  `).join('');
+
+  hospitalsList.querySelectorAll('[data-hospital]').forEach(card => {
+    card.addEventListener('click', async () => {
+      const hospital = allHospitals.find(h => h.name === card.dataset.hospital);
+      if (hospital) {
+        await selectHospital(hospital);
+      }
+    });
+  });
+}
+
+ async function ensureHospitalInBackend(hospital) {
+  try {
+    const response = await fetch(`${API_BASE}/external-hospitals/upsert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: hospital.name, address: hospital.address })
+    });
+    if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+    selectedHospitalRecord = await response.json();
+  } catch (err) {
+    console.warn('⚠️ Backend unavailable, using local data:', err.message);
+    selectedHospitalRecord = {
+      name: hospital.name,
+      address: hospital.address,
+      doctors: {
+        'General Medicine': ['Dr. Arjun Sharma', 'Dr. Priya Nair'],
+        'Cardiology': ['Dr. Rohan Mehta', 'Dr. Sunita Rao'],
+        'Orthopedics': ['Dr. Kiran Patel'],
+        'Emergency': ['Dr. Anita Verma', 'Dr. Suresh Kumar'],
+        'Dermatology': ['Dr. Meena Iyer'],
+        'Pediatrics': ['Dr. Deepa Krishnan']
+      }
+    };
+  }
+  return selectedHospitalRecord;
+}
+async function selectHospital(hospital) {
+  await ensureHospitalInBackend(hospital);
+  renderHospitalCards(allHospitals);
+
+  selectedHospitalNameEl.textContent = hospital.name;
+  selectedHospitalAddressEl.textContent = hospital.address;
+  selectedBadge.classList.remove('hidden');
+  selectedDistance.textContent = hospital.distance ? `${hospital.distance.toFixed(1)} km` : '--';
+  selectedOpenStatus.textContent = '24x7';
+  selectedRating.textContent = hospital.rating || '--';
+  selectedWait.textContent = `${hospital.waitMinutes || '--'} min`;
+
+  selectedHospitalSummary.innerHTML = `
+    <strong>${hospital.name}</strong><br>
+    <span class="subnote">${hospital.address}</span>
+  `;
+
+  waitTimeSummary.textContent = `${hospital.waitMinutes || '--'} minutes • ${hospital.waitLabel || 'Low'}`;
+  summaryStep.textContent = 'Step 4 of 5';
+
+  renderDepartmentTiles();
+  renderDoctorsPanel();
+  renderLiveQueueSimulation();
+}
+
+  function renderDepartmentTiles() {
+    departmentTiles.innerHTML = DEPARTMENTS.map(d => `
+      <div class="department-card ${departmentSelect.value === d.name ? 'active' : ''}">
+        <div style="font-size:34px">${d.icon}</div>
+        <span>${d.name}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderDoctorsPanel() {
+    if (!selectedHospitalRecord?.doctors) {
+      doctorColumns.innerHTML = '<div class="doctor-card">Doctors will appear after hospital selection.</div>';
+      doctorCountText.textContent = '';
+      assignedDoctorSummary.textContent = 'Doctor will appear after hospital selection.';
+      return;
+    }
+
+    const entries = Object.entries(selectedHospitalRecord.doctors);
+    doctorCountText.textContent = `${entries.length} departments`;
+
+    doctorColumns.innerHTML = entries.map(([dept, docs]) => `
+      <div class="doctor-card">
+        <h5>${dept}</h5>
+        ${(docs || []).map(doc => `
+          <div class="doctor-entry">
+            <div class="avatar">${getInitials(doc)}</div>
+            <div>
+              <div style="font-weight:800">${doc}</div>
+              <div class="subnote">${dept}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+    const currentDeptDoctors = selectedHospitalRecord.doctors[departmentSelect.value] || [];
+    assignedDoctorSummary.textContent = currentDeptDoctors.length ? currentDeptDoctors[0] : 'Doctor assignment pending';
+  }
+
+  function hospitalThumbSVG() {
+    return `
+      <svg viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+        <rect x="18" y="26" width="54" height="40" rx="10" fill="#F8FBFF" stroke="#BFD3FF" stroke-width="2"/>
+        <rect x="32" y="14" width="26" height="18" rx="8" fill="#EEF4FF" stroke="#BFD3FF" stroke-width="2"/>
+        <path d="M41 18h8v8h8v8h-8v8h-8v-8h-8v-8h8v-8Z" fill="#2C6CFF"/>
+        <path d="M28 66V48M45 66V48M62 66V48" stroke="#C1D1F8" stroke-width="2"/>
+      </svg>
+    `;
+  }
+
+  document.querySelectorAll('#genderGroup .radio-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('#genderGroup .radio-pill').forEach(x => x.classList.remove('active'));
+      pill.classList.add('active');
+      selectedGender = pill.dataset.value;
+      updateSummary();
+    });
+  });
+
+  document.getElementById('sendOtpBtn').addEventListener('click', () => {
+    if (!phoneInput.value.trim()) {
+      alert('Enter phone number first.');
+      return;
+    }
+    otpModal.style.display = 'flex';
+  });
+
+  document.getElementById('confirmOtpBtn').addEventListener('click', async () => {
+  const phone = phoneInput.value.trim();
+  const code = otpInput.value.trim();
+
+  if (!phone) return alert('Enter phone number first.');
+  if (!code) return alert('Enter OTP first.');
+
+  const res = await fetch(`${API_BASE}/verify/check-phone-otp`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ phone, code })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    return alert(data.message || 'OTP verification failed');
+  }
+
+  if (data.success) {
+    phoneVerified = true;
+    phoneVerifiedBadge.classList.remove('hidden');
+    phoneNote.textContent = 'Phone verified successfully.';
+    otpModal.style.display = 'none';
+    otpInput.value = '';
+    updateSummary();
+  } else {
+    alert('Invalid OTP');
+  }
+});
+
+  document.getElementById('closeOtpBtn').addEventListener('click', () => {
+    otpModal.style.display = 'none';
+  });
+
+  document.getElementById('verifyEmailBtn').addEventListener('click', () => {
+    if (!emailInput.value.trim()) {
+      alert('Enter email first.');
+      return;
+    }
+    emailVerified = true;
+    emailVerifiedBadge.classList.remove('hidden');
+    emailNote.textContent = 'Email verified successfully.';
+    updateSummary();
+  });
+
+  document.getElementById('openAllSymptomsBtn').addEventListener('click', () => {
+    symptomModal.style.display = 'flex';
+    renderAllSymptoms();
+  });
+
+  document.getElementById('closeSymptomsBtn').addEventListener('click', () => {
+    symptomModal.style.display = 'none';
+  });
+
+  allSymptomsSearch.addEventListener('input', () => {
+    const q = allSymptomsSearch.value.toLowerCase();
+    renderAllSymptoms(ALL_SYMPTOMS.filter(s => s.toLowerCase().includes(q)));
+  });
+
+  symptomSearch.addEventListener('input', () => {
+    const q = symptomSearch.value.toLowerCase();
+    const match = ALL_SYMPTOMS.find(s => s.toLowerCase() === q);
+    if (match && !selectedSymptoms.includes(match)) {
+      toggleSymptom(match);
+      symptomSearch.value = '';
+    }
+  });
+
+  browseSymptoms.innerHTML += ALL_SYMPTOMS.map(s => `<option value="${s}">${s}</option>`).join('');
+  browseSymptoms.addEventListener('change', () => {
+    if (browseSymptoms.value) toggleSymptom(browseSymptoms.value);
+    browseSymptoms.value = '';
+  });
+
+  additionalNotes.addEventListener('input', () => {
+    document.getElementById('noteCount').textContent = additionalNotes.value.length;
+    updateSummary();
+  });
+
+  [nameInput, ageInput, phoneInput, emailInput].forEach(el => {
+    el.addEventListener('input', updateSummary);
+  });
+
+  departmentSelect.addEventListener('change', () => {
+    selectedDepartmentSummary.textContent = departmentSelect.value;
+    renderDepartmentTiles();
+    renderDoctorsPanel();
+    updateSummary();
+    if (selectedHospitalRecord?.name) {
+     renderLiveQueueSimulation();
+}
+  });
+
+  document.getElementById('detectLocationBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported in this browser.');
+      return;
+    }
+
+    locationStatus.textContent = 'Detecting location...';
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        currentLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          addressText: 'Current browser location'
+        };
+        locationStatus.textContent = `Location detected: ${currentLocation.latitude.toFixed(5)}, ${currentLocation.longitude.toFixed(5)}`;
+      },
+      (error) => {
+        console.error(error);
+        locationStatus.textContent = 'Location detection failed.';
+        alert('Unable to fetch location. Please allow browser location access.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+
+  document.getElementById('goToHospitalsBtn').addEventListener('click', async () => {
+    if (!validateStepOne()) return;
+    hospitalStep.classList.remove('hidden');
+    await fetchNearbyHospitals();
+    hospitalStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  document.getElementById('findHospitalsBtn').addEventListener('click', async () => {
+    if (!validateStepOne()) return;
+    await fetchNearbyHospitals();
+  });
+
+  document.getElementById('backToFormBtn').addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+document.getElementById('confirmOtpBtn').addEventListener('click', async () => {
+  const phone = phoneInput.value.trim();
+  const code = otpInput.value.trim();
+
+  const res = await fetch(`${API_BASE}/verify/check-phone-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code })
+  });
+
+  const data = await res.json();
+  if (!res.ok) return alert(data.message || 'OTP verification failed');
+
+  if (data.success) {
+    phoneVerified = true;
+    phoneVerifiedBadge.classList.remove('hidden');
+    phoneNote.textContent = 'Phone verified successfully.';
+    otpModal.style.display = 'none';
+    otpInput.value = '';
+    updateSummary();
+  } else {
+    alert('Incorrect OTP');
+  }
+});
+document.getElementById('verifyEmailBtn').addEventListener('click', async () => {
+  const email = emailInput.value.trim();
+  if (!email) return alert('Enter email first.');
+
+  const res = await fetch(`${API_BASE}/verify/send-email-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+
+  const data = await res.json();
+  if (!res.ok) return alert(data.message || 'Failed to send email OTP');
+
+  const code = prompt('Enter the OTP sent to your email');
+  if (!code) return;
+
+  const checkRes = await fetch(`${API_BASE}/verify/check-email-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code })
+  });
+
+  const checkData = await checkRes.json();
+  if (!checkRes.ok) return alert(checkData.message || 'Email verification failed');
+
+  if (checkData.success) {
+    emailVerified = true;
+    emailVerifiedBadge.classList.remove('hidden');
+    emailNote.textContent = 'Email verified successfully.';
+    updateSummary();
+  } else {
+    alert('Incorrect email OTP');
+  }
+});
+  document.getElementById('hospitalSearch').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    const filtered = allHospitals.filter(h =>
+      h.name.toLowerCase().includes(q) || h.address.toLowerCase().includes(q)
+    );
+    renderHospitalCards(filtered);
+  });
+document.getElementById('sendOtpBtn').addEventListener('click', async () => {
+  const phone = phoneInput.value.trim();
+  if (!phone) return alert('Enter phone number first.');
+
+  const res = await fetch(`${API_BASE}/verify/send-phone-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone })
+  });
+
+  const data = await res.json();
+  if (!res.ok) return alert(data.message || 'Failed to send OTP');
+
+  otpModal.style.display = 'flex';
+  phoneNote.textContent = 'OTP sent to your phone.';
+});
+  document.getElementById('confirmBookingBtn').addEventListener('click', async () => {
+  if (!selectedHospitalRecord) { alert('Please select a hospital first.'); return; }
+  if (!selectedSymptoms.length) { alert('Please select symptoms first.'); return; }
+
+  try {
+    const payload = {
+      name: nameInput.value,
+      age: Number(ageInput.value),
+      gender: selectedGender,
+      phone: phoneInput.value,
+      email: emailInput.value,
+      symptoms: selectedSymptoms.join(', '),
+      additionalNotes: additionalNotes.value,
+      department: departmentSelect.value,
+      selectedHospitalName: selectedHospitalRecord.name,
+      selectedHospitalAddress: selectedHospitalRecord.address || 'Nearby hospital',
+      location: currentLocation || { latitude: 0, longitude: 0, addressText: 'Not shared' }
+    };
+
+    const response = await fetch(`${API_BASE}/patients/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    if (!response.ok) { alert(data.message || 'Booking failed'); return; }
+    liveQueueItems.unshift({
+  token: data.tokenNumber || tokenPreview.textContent,
+  name: nameInput.value,
+  department: departmentSelect.value,
+  symptom: selectedSymptoms[0] || 'General checkup',
+  status: 'waiting'
+});
+
+renderLiveQueueSimulation();
+
+    summaryStep.textContent = 'Step 5 of 5';
+    tokenPreview.textContent = data.tokenNumber || tokenPreview.textContent;
+    assignedDoctorSummary.textContent = data.assignedDoctor || assignedDoctorSummary.textContent;
+    waitTimeSummary.textContent = data.status || 'Booked';
+    alert(`Booking confirmed for ${selectedHospitalRecord.name}. Token: ${data.tokenNumber}`);
+
+  } catch (err) {
+    console.warn('Backend offline, demo mode');
+    const token = `UF-${Math.floor(Math.random() * 9000) + 1000}`;
+    summaryStep.textContent = 'Step 5 of 5';
+    tokenPreview.textContent = token;
+    alert(`[Demo Mode] Booking confirmed for ${selectedHospitalRecord.name}. Token: ${token}`);
+  }
+});
+
+socket.on('queue_updated', () => {
+  console.log('Queue updated');
+});
+
+renderPopularSymptoms();
+renderSelectedSymptoms();
+renderAllSymptoms();
+updateSummary();
+renderDepartmentTiles();
+
+// ===== NAV ACTIVE STATE & SMOOTH SCROLL =====
+function setActive(el) {
+  if (!el) return;
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+}
+
+document.querySelectorAll('.nav a').forEach(link => {
+  link.addEventListener('click', function(e) {
+    setActive(this);
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Highlight nav based on scroll position
+const sections = {
+  '#home': document.getElementById('home'),
+  '#book-token': document.getElementById('book-token'),
+  '#departments': document.getElementById('departments'),
+  '#emergency': document.getElementById('emergency'),
+  '#help': document.getElementById('help'),
+};
+window.addEventListener('scroll', () => {
+  const y = window.scrollY + 120;
+  let current = '#home';
+  Object.entries(sections).forEach(([id, el]) => {
+    if (el && el.offsetTop <= y) current = id;
+  });
+  document.querySelectorAll('.nav a').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === current);
+  });
+}, { passive: true });
+
+// Set Home as default active
+setActive(document.querySelector('.nav a[href="#home"]'));
+
+  </script>
+  </div>
+</body>
+</html>
