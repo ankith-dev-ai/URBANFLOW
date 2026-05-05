@@ -1,0 +1,423 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UrbanFlow | Hospital Portal</title>
+  <!-- Tag 1: loads socket.io library (no code inside) -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<!-- Tag 2: your own code (no src attribute) -->
+<script>
+  async function clearAllPatients() {
+    if (!confirm(`Delete ALL patient records for ${state.selectedHospitalName}? This cannot be undone.`)) return
+    try {
+      const res = await fetch(
+        `${API_BASE}/patients/by-selected-hospital/${encodeURIComponent(state.selectedHospitalName)}`,
+        { method: 'DELETE' }
+      )
+      if (res.ok) {
+        state.allPatients = []
+        renderAll()
+        alert('All patient records cleared.')
+      } else {
+        alert('Failed to clear.')
+      }
+    } catch (err) {
+      alert('Error: ' + err.message)
+    }
+  }
+</script>
+  <style>
+    :root{
+      --line:#d8e3ff; --text:#16224d; --muted:#6b7a9d; --blue:#2c6cff; --blue2:#6f7cff;
+      --green:#2fb46e; --red:#ff5b68; --shadow:0 18px 50px rgba(33,53,102,.10); --radius:22px;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:linear-gradient(180deg,#fbfcff,#f0f5ff);color:var(--text)}
+    .hidden{display:none!important}
+    .auth-shell{min-height:100vh;display:grid;place-items:center;padding:24px}
+    .auth-card{max-width:1200px;width:100%;background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-columns:1.05fr .95fr}
+    .auth-left{padding:34px;background:radial-gradient(circle at 80% 15%, rgba(111,124,255,.18), transparent 30%),linear-gradient(135deg,#ffffff,#f4f8ff)}
+    .auth-right{padding:34px}
+    .brand{display:flex;align-items:center;gap:14px}
+    .mark{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#3da2ff,#4f67ff);display:grid;place-items:center;box-shadow:0 14px 28px rgba(79,103,255,.25)}
+    .mark svg{width:26px;height:26px}
+    .muted{color:var(--muted)} .tiny{font-size:12px}
+    .hero-illus{height:280px;border:1px solid var(--line);border-radius:26px;background:linear-gradient(180deg,#f5f9ff,#eef4ff);display:grid;place-items:center;margin:26px 0}
+    .bullet-list{display:grid;gap:10px;margin-top:18px}
+    .bullet{display:flex;gap:10px;align-items:flex-start}
+    .bullet:before{content:"✓";width:20px;height:20px;display:grid;place-items:center;border-radius:50%;background:#ecfff3;color:var(--green);font-size:12px;font-weight:800;flex:none}
+    .tabbar{display:flex;gap:10px;margin-bottom:18px}
+    .tab{padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:#fff;font-weight:800;cursor:pointer}
+    .tab.active{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none}
+    .panel{display:none}
+    .panel.active{display:block}
+    .field{display:grid;gap:8px;margin-bottom:14px}
+    .field label{font-size:13px;font-weight:700;color:#51608a}
+    .input,.select{display:flex;align-items:center;gap:10px;min-height:54px;border:1px solid var(--line);border-radius:16px;background:#fbfdff;padding:12px 14px}
+    .input input,.select select{border:none;outline:none;background:transparent;width:100%;font:inherit;color:var(--text)}
+    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .btn{border:none;border-radius:16px;padding:14px 16px;font-weight:800;cursor:pointer}
+    .btn.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff}
+    .btn.secondary{background:#fff;border:1px solid var(--line);color:var(--text)}
+    .msg{min-height:18px;font-size:13px}
+    .msg.error{color:var(--red)} .msg.ok{color:var(--green)}
+    .demo-box{margin-top:14px;padding:14px;border-radius:18px;background:#f7faff;border:1px solid var(--line)}
+
+    .app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    .sidebar{background:rgba(255,255,255,.86);backdrop-filter:blur(16px);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:18px}
+    .nav{display:grid;gap:8px}
+    .nav-btn{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;color:var(--text);font-weight:700;cursor:pointer}
+    .nav-btn.active{background:#edf3ff;color:var(--blue)} .nav-btn:hover{background:#f6f9ff}
+    .nav-btn .badge{margin-left:auto;background:#fff1f3;color:var(--red);padding:4px 8px;border-radius:999px;font-size:12px}
+    .download-card{margin-top:auto;background:#fff;border:1px solid var(--line);border-radius:24px;padding:16px;box-shadow:var(--shadow)}
+    .download-card .art{height:120px;border-radius:18px;background:linear-gradient(180deg,#f4f8ff,#eef4ff);display:grid;place-items:center;border:1px solid var(--line);margin-bottom:12px}
+    .download-card button{width:100%;padding:12px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--blue);font-weight:800;cursor:pointer}
+    .main{padding:18px}
+    .topbar,.kpi,.card{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;border-radius:22px;padding:14px 18px}
+    .hospital-id{display:flex;align-items:center;gap:14px}
+    .hospital-id .mini-art{width:54px;height:54px;border-radius:16px;background:#f4f8ff;border:1px solid var(--line);display:grid;place-items:center}
+    .top-actions{display:flex;align-items:center;gap:12px}
+    .search{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px 14px;min-width:300px}
+    .search input,.picker select{border:none;outline:none;background:transparent;width:100%;font:inherit;color:var(--text)}
+    .icon-btn{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;position:relative}
+    .icon-btn .dot{position:absolute;top:7px;right:7px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center}
+    .profile{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:8px 12px}
+    .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#cfe0ff,#eef4ff);display:grid;place-items:center;color:var(--blue);font-weight:900}
+    .content{display:grid;gap:18px;margin-top:18px}
+    .hero{background:linear-gradient(135deg,#ffffff,#f6f9ff);border:1px solid var(--line);border-radius:26px;padding:24px;box-shadow:var(--shadow);display:flex;justify-content:space-between;gap:16px;align-items:center}
+    .hero h1{margin:0 0 8px;font-size:28px} .hero p{margin:0;color:var(--muted)}
+    .live-box{display:grid;place-items:center;border:1px solid var(--line);background:#fff;border-radius:20px;padding:16px 20px;min-width:200px}
+    .live-indicator{display:flex;align-items:center;gap:8px;color:var(--green);font-weight:800}
+    .live-indicator:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--green)}
+    .filter-bar{display:grid;grid-template-columns:1fr 220px 160px;gap:12px}
+    .picker{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px 14px}
+    .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+    .kpi{border-radius:20px;padding:18px}
+    .kpi .head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .kpi .ico{width:42px;height:42px;border-radius:14px;background:#f4f8ff;display:grid;place-items:center;border:1px solid var(--line)}
+    .kpi strong{font-size:34px;display:block}
+    .grid-2{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+    .bottom-grid{display:grid;grid-template-columns:1fr 1fr .9fr;gap:18px}
+    .card{border-radius:24px;padding:18px}
+    .card-head,.toolbar-note{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+    .pill{padding:8px 12px;border-radius:999px;background:#f3f7ff;color:#52648f;font-weight:700;font-size:13px}
+    .incoming-row,.queue-row,.doctor-row,.dept-row,.alert-row,.setting-row{border:1px solid var(--line);border-radius:18px;padding:12px 14px;background:#fbfdff;margin-bottom:10px}
+    .incoming-row{display:grid;grid-template-columns:160px 100px 1fr 90px 120px;gap:12px;align-items:center}
+    .incoming-profile{display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center}
+    .severity{display:inline-flex;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}
+    .severity.high{background:#fff0f2;color:var(--red)} .severity.medium{background:#fff7ea;color:#d88418} .severity.low{background:#ecfff3;color:var(--green)}
+    .token{display:inline-flex;padding:6px 10px;border-radius:999px;background:#edf3ff;color:var(--blue);font-weight:800}
+    .overview{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:center}
+    .legend{display:grid;gap:12px}
+    .legend-item{display:flex;align-items:center;justify-content:space-between;font-weight:700;color:#4f5f88}
+    .dotx{width:10px;height:10px;border-radius:50%;margin-right:10px;display:inline-block}
+    .donut{width:210px;height:210px;border-radius:50%;background:conic-gradient(#4e7dff 0 22%, #76c49d 22% 38%, #a282ff 38% 54%, #ffbf55 54% 71%, #f7787f 71% 84%, #58b8e8 84% 100%);position:relative;margin:auto}
+    .donut:after{content:"";position:absolute;inset:36px;background:#fff;border-radius:50%;box-shadow:inset 0 0 0 1px var(--line)}
+    .donut-center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:1;font-weight:800}
+    .alert-card{background:#fff7f8;border-color:#ffd8dd}
+    .dept-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .dept-tile{border:1px solid var(--line);border-radius:18px;padding:12px;background:#fbfdff;text-align:center}
+    .activity-item{display:grid;grid-template-columns:72px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+    .activity-item:last-child{border-bottom:none}
+    .summary-list{display:grid;gap:12px}
+    .summary-item{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px}
+    .summary-item:last-child{border-bottom:none;padding-bottom:0}
+    .patients-wrapper{display:grid;gap:12px}
+    .patient-card{display:grid;grid-template-columns:1.1fr .95fr;gap:14px;border:1px solid var(--line);border-radius:22px;padding:16px;background:#fbfdff}
+    .patient-head{display:grid;grid-template-columns:70px 1fr auto;gap:14px;align-items:center;margin-bottom:12px}
+    .patient-head .avatar{width:70px;height:70px;font-size:24px}
+    .symptom-chip{display:inline-flex;padding:8px 10px;border-radius:999px;background:#edf3ff;color:var(--blue);font-size:12px;font-weight:700;margin:0 6px 8px 0}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .mini-box{padding:12px;border-radius:16px;background:#fff;border:1px solid var(--line)}
+    .empty{padding:14px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);background:#fbfdff}
+    .section-page{display:none}.section-page.active{display:block}
+    @media (max-width:1300px){.kpis{grid-template-columns:repeat(3,1fr)}.grid-2,.bottom-grid,.patient-card,.overview,.filter-bar,.auth-card{grid-template-columns:1fr}.app{grid-template-columns:1fr}.sidebar{display:none}}
+    @media (max-width:760px){.kpis,.dept-grid,.mini-grid,.row-2{grid-template-columns:1fr}.incoming-row{grid-template-columns:1fr}.topbar,.hero{flex-direction:column;align-items:flex-start}.search{min-width:0;width:100%}.top-actions{width:100%;flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+<div class="auth-shell" id="authShell">
+  <div class="auth-card">
+    <div class="auth-left">
+      <div class="brand">
+        <div class="mark"><svg viewBox="0 0 64 64"><path d="M26 8h12v18h18v12H38v18H26V38H8V26h18V8Z" fill="white"/></svg></div>
+        <div><strong style="font-size:22px">UrbanFlow</strong><div class="muted tiny">Smart Healthcare, Smarter Cities</div></div>
+      </div>
+      <h1>Hospital auth first, then a separate interface for every admin action.</h1>
+      <div class="muted">This version gives you a realistic hospital portal flow: Sign Up once, Login later, then open distinct screens for Dashboard, Patients, Queue, Doctors, Alerts, Departments, Analytics, and Settings.</div>
+      <div class="hero-illus">
+        <svg viewBox="0 0 420 250" width="90%" height="90%">
+          <rect x="120" y="30" width="180" height="150" rx="22" fill="#fff" stroke="#abc1ff" stroke-width="4"/>
+          <rect x="178" y="10" width="64" height="45" rx="14" fill="#f2f6ff" stroke="#abc1ff" stroke-width="4"/>
+          <path d="M196 22h28v18h18v28h-18v18h-28V68h-18V40h18Z" fill="#2c6cff"/>
+          <path d="M50 210h320" stroke="#d3dfff" stroke-width="4"/>
+          <path d="M70 210v-35m30 35v-52m35 52v-42m170 42v-44m35 44v-56" stroke="#c1d2ff" stroke-width="4"/>
+        </svg>
+      </div>
+      <div class="bullet-list">
+        <div class="bullet">Hospital registers once with admin email and password</div>
+        <div class="bullet">Hospital logs in later using saved credentials</div>
+        <div class="bullet">Every sidebar item opens its own working interface</div>
+      </div>
+    </div>
+
+    <div class="auth-right">
+      <div class="tabbar">
+        <button class="tab active" id="tabLogin">Hospital Login</button>
+        <button class="tab" id="tabSignup">Create Hospital Account</button>
+      </div>
+
+      <div class="panel active" id="loginPanel">
+        <h2>Hospital Login</h2>
+        <div class="muted">Choose the hospital account and log in to open the operations center.</div>
+        <div class="field"><label>Hospital</label><div class="select"><span>🏥</span><select id="loginHospital"></select></div></div>
+        <div class="field"><label>Admin Email</label><div class="input"><span>✉️</span><input id="loginEmail" placeholder="admin@gowthamhospital.com" /></div></div>
+        <div class="field"><label>Password</label><div class="input"><span>🔒</span><input id="loginPassword" type="password" placeholder="Enter password" /></div></div>
+        <div class="row-2">
+          <button class="btn primary" id="loginBtn">Login</button>
+          <button class="btn secondary" id="fillDemoBtn">Use Demo</button>
+        </div>
+        <div class="msg error" id="loginMsg"></div>
+        <div class="demo-box"><strong>Demo</strong><div class="tiny muted" style="margin-top:6px">If no account is created yet, first create one. Demo password suggestion: <strong>admin123</strong>.</div></div>
+      </div>
+
+      <div class="panel" id="signupPanel">
+        <h2>Create Hospital Account</h2>
+        <div class="muted">Create a hospital admin account. It is saved in this browser for demo use, and the selected hospital opens after login.</div>
+        <div class="field"><label>Hospital</label><div class="select"><span>🏥</span><select id="signupHospital"></select></div></div>
+        <div class="row-2">
+          <div class="field"><label>Admin Name</label><div class="input"><span>👤</span><input id="signupAdminName" placeholder="Dr. Rahul Sharma" /></div></div>
+          <div class="field"><label>Admin Email</label><div class="input"><span>✉️</span><input id="signupEmail" placeholder="admin@gowthamhospital.com" /></div></div>
+        </div>
+        <div class="row-2">
+          <div class="field"><label>Password</label><div class="input"><span>🔒</span><input id="signupPassword" type="password" placeholder="Create password" /></div></div>
+          <div class="field"><label>Confirm Password</label><div class="input"><span>✅</span><input id="signupConfirmPassword" type="password" placeholder="Confirm password" /></div></div>
+        </div>
+        <button class="btn primary" id="signupBtn" style="width:100%">Create Account</button>
+        <div class="msg" id="signupMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app hidden" id="mainApp">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark"><svg viewBox="0 0 64 64"><path d="M26 8h12v18h18v12H38v18H26V38H8V26h18V8Z" fill="white"/></svg></div>
+      <div><strong>UrbanFlow</strong><small class="muted">Smart Healthcare, Smarter Cities</small></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-btn active" data-section="dashboard">📊 Dashboard</div>
+      <div class="nav-btn" data-section="patients">🧑‍🤝‍🧑 Patients</div>
+      <div class="nav-btn" data-section="queue">🎛️ Queue Management</div>
+      <div class="nav-btn" data-section="doctors">🩺 Doctors</div>
+      <div class="nav-btn" data-section="alerts">🔔 Emergency Alerts <span class="badge" id="sidebarAlertCount">0</span></div>
+      <div class="nav-btn" data-section="departments">◫ Departments</div>
+      <div class="nav-btn" data-section="analytics">📈 Analytics</div>
+      <div class="nav-btn" data-section="settings">⚙️ Settings</div>
+    </nav>
+    <div class="download-card">
+      <div class="art">📱</div>
+      <strong>Hospital Admin</strong>
+      <div class="tiny muted" style="margin:8px 0 14px">Logged in as selected hospital admin.</div>
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="hospital-id">
+        <div class="mini-art">🏥</div>
+        <div>
+          <strong id="hospitalTitle">Select Hospital</strong>
+          <div class="tiny muted">Verified Hospital Admin Access</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="search">
+          <span>🔎</span>
+          <input id="patientSearch" placeholder="Search patients, tokens, departments..." />
+        </div>
+        <div class="icon-btn">🔔<span class="dot" id="topAlertDot">0</span></div>
+        <div class="profile">
+          <div class="avatar">DR</div>
+          <div>
+            <strong id="profileName">Dr. Rahul Sharma</strong>
+            <div class="tiny muted">Admin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="content">
+      <div class="hero">
+        <div>
+          <h1 id="pageTitle">Hospital Operations Center</h1>
+          <p id="pageSubtitle">Real-time overview of hospital operations and patient flow.</p>
+        </div>
+        <div class="live-box">
+          <div class="live-indicator">Live</div>
+          <div style="font-size:26px;font-weight:900;margin-top:6px" id="clockNow">09:42 AM</div>
+          <div class="tiny muted" id="dateNow">May 24, 2025 | Saturday</div>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="picker"><span>🏥</span><select id="hospitalPicker"></select></div>
+        <div class="picker"><span>🩺</span><select id="departmentPicker">
+          <option value="All">All Departments</option>
+          <option value="General Medicine">General Medicine</option>
+          <option value="Cardiology">Cardiology</option>
+          <option value="Orthopedics">Orthopedics</option>
+          <option value="Dermatology">Dermatology</option>
+          <option value="Pediatrics">Pediatrics</option>
+          <option value="Emergency">Emergency</option>
+        </select></div>
+        <button class="btn primary" id="openDashboardBtn">Open Dashboard</button>
+      </div>
+
+      <section class="section-page active" id="section-dashboard">
+        <div class="kpis">
+          <div class="kpi"><div class="head"><div class="ico">👥</div><div>Waiting Patients</div></div><strong id="kpiWaiting">0</strong><small class="muted">Live from dashboard</small></div>
+          <div class="kpi"><div class="head"><div class="ico">🚨</div><div>Emergency Cases</div></div><strong id="kpiEmergency">0</strong><small class="muted">Needs attention</small></div>
+          <div class="kpi"><div class="head"><div class="ico">🩺</div><div>Doctors On Duty</div></div><strong id="kpiDoctors">6</strong><small class="muted">Generated dynamically</small></div>
+          <div class="kpi"><div class="head"><div class="ico">⏱️</div><div>Average Wait Time</div></div><strong id="kpiWait">0 min</strong><small class="muted">Based on current queue</small></div>
+          <div class="kpi"><div class="head"><div class="ico">🏢</div><div>Active Departments</div></div><strong id="kpiDepartments">6</strong><small class="muted">Operational today</small></div>
+          <div class="kpi"><div class="head"><div class="ico">✅</div><div>Completed Consultations</div></div><strong id="kpiCompleted">0</strong><small class="muted">Updates as status changes</small></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h3>Live Incoming Patients</h3><span class="pill">Live</span></div>
+            <div id="incomingPatients"></div>
+          </div>
+          <div style="display:grid;gap:18px">
+            <div class="card">
+              <div class="card-head"><h3>Queue Status Overview</h3><span class="pill" id="queueDeptLabel">All Departments</span></div>
+              <div class="overview">
+                <div class="legend" id="queueLegend"></div>
+                <div class="donut"><div class="donut-center"><div><div class="tiny muted">Total</div><div style="font-size:38px" id="donutTotal">0</div><div class="tiny muted">In Queue</div></div></div></div>
+              </div>
+            </div>
+            <div class="card alert-card">
+              <div class="card-head"><h3>Emergency Alerts</h3><span class="pill">Critical Focus</span></div>
+              <div id="emergencyAlerts"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-grid">
+          <div class="card"><div class="card-head"><h3>Departments</h3><span class="pill">Live Count</span></div><div class="dept-grid" id="deptTiles"></div></div>
+          <div class="card"><div class="card-head"><h3>Live Activity Feed</h3><span class="pill">Live</span></div><div id="activityFeed"></div></div>
+          <div class="card"><div class="card-head"><h3>Today’s Summary</h3><span class="pill">Snapshot</span></div><div class="summary-list">
+            <div class="summary-item"><span>Total Patients Visited</span><strong id="summaryVisited">0</strong></div>
+            <div class="summary-item"><span>New Patients Today</span><strong id="summaryNew">0</strong></div>
+            <div class="summary-item"><span>Emergency Cases</span><strong id="summaryEmergency">0</strong></div>
+            <div class="summary-item"><span>Discharged Patients</span><strong id="summaryDischarged">0</strong></div>
+          </div></div>
+        </div>
+      </section>
+
+      <section class="section-page" id="section-patients"><div class="card"><div class="toolbar-note"><h3 style="margin:0">Patients</h3><span class="pill" id="patientsCountPill">0 Patients</span></div><div class="patients-wrapper" id="patientDetailsList"></div></div></section>
+      <section class="section-page" id="section-queue"><div class="card"><div class="toolbar-note"><h3 style="margin:0">Queue Management</h3><span class="pill" id="queueCountPill">0 In Queue</span></div><div id="queueList"></div></div></section>
+      <section class="section-page" id="section-doctors"><div class="card"><div class="toolbar-note"><h3 style="margin:0">Doctors on Duty</h3><span class="pill" id="doctorDeptPill">All Departments</span></div><div id="doctorListPage"></div></div></section>
+      <section class="section-page" id="section-alerts"><div class="card alert-card"><div class="toolbar-note"><h3 style="margin:0">Emergency Alert Center</h3><span class="pill" id="emergencyCountPill">0 Critical</span></div><div id="alertCenterList"></div></div></section>
+      <section class="section-page" id="section-departments"><div class="card"><div class="toolbar-note"><h3 style="margin:0">Department Operations</h3><span class="pill">Live Department View</span></div><div id="departmentOperations"></div></div></section>
+      <section class="section-page" id="section-analytics"><div class="card"><div class="toolbar-note"><h3 style="margin:0">Analytics</h3><span class="pill">Realtime Snapshot</span></div><div class="grid-2"><div class="card" style="box-shadow:none"><div class="card-head"><h3>Department Distribution</h3></div><div id="analyticsDeptList"></div></div><div class="card" style="box-shadow:none"><div class="card-head"><h3>Operational Insights</h3></div><div id="analyticsInsights"></div></div></div></div></section>
+      <section class="section-page" id="section-settings"><div class="card"><div class="toolbar-note"><h3 style="margin:0">Settings</h3><span class="pill">Hospital Preferences</span></div><div id="settingsList">
+        <div class="setting-row"><strong>Current Hospital</strong><div class="tiny muted" id="settingsHospital">-</div></div>
+        <div class="setting-row"><strong>Current Department Filter</strong><div class="tiny muted" id="settingsDepartment">All</div></div>
+        <div class="setting-row"><strong>Admin Email</strong><div class="tiny muted" id="settingsAdminEmail">-</div></div>
+        <div class="setting-row"><strong>Notification Mode</strong><div class="tiny muted">Live browser updates enabled</div></div>
+        <div class="setting-row"><strong>Data Source</strong><div class="tiny muted">MongoDB + Socket updates</div></div>
+        <div class="setting-row">
+  <strong>Clear Patient Records</strong>
+  <div class="tiny muted">Permanently delete all patient records for this hospital.</div>
+  <button class="btn primary" style="margin-top:10px;background:#ff5b68;border:none" onclick="clearAllPatients()">
+    🗑️ Clear All Patients
+  </button>
+</div>
+      </div></div></section>
+    </section>
+  </main>
+</div>
+
+<script>
+const API_BASE='http://localhost:5001/api';
+const socket=io('http://localhost:5001');
+const state={selectedHospitalName:'',selectedDepartment:'All',allPatients:[],allHospitals:[],adminEmail:'',profileName:'Dr. Rahul Sharma'};
+const departmentOrder=['Cardiology','Orthopedics','Dermatology','Pediatrics','Emergency','General Medicine'];
+const deptIcon={'Cardiology':'❤️','Orthopedics':'🦴','Dermatology':'🧴','Pediatrics':'🧸','Emergency':'🚑','General Medicine':'🩺'};
+const colors=['#4e7dff','#76c49d','#a282ff','#ffbf55','#f7787f','#58b8e8'];
+const pageMeta={dashboard:{title:'Hospital Operations Center',subtitle:'Real-time overview of hospital operations and patient flow.'},patients:{title:'Patient Records',subtitle:'Review patient details, symptoms and doctor assignments.'},queue:{title:'Queue Management',subtitle:'Manage the live queue with realistic staff actions.'},doctors:{title:'Doctors on Duty',subtitle:'See mapped doctors department-wise for the selected hospital.'},alerts:{title:'Emergency Alert Center',subtitle:'Track all critical and high-priority cases here.'},departments:{title:'Department Operations',subtitle:'See queue load across hospital departments.'},analytics:{title:'Operational Analytics',subtitle:'Quick numbers for planning and hospital monitoring.'},settings:{title:'Hospital Settings',subtitle:'View current dashboard context and admin preferences.'}};
+let currentSection='dashboard';
+const $=id=>document.getElementById(id);
+function initials(name){return (name||'PT').split(' ').filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('')}
+function updateClock(){const now=new Date(); $('clockNow').textContent=now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); $('dateNow').textContent=now.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric', weekday:'long'});}
+function severityClass(priority){if((priority||'').toLowerCase()==='emergency') return 'high'; if((priority||'').toLowerCase()==='normal') return 'low'; return 'medium'}
+function deptCounts(patients){const counts={}; departmentOrder.forEach(d=>counts[d]=0); patients.forEach(p=>{if(p.department) counts[p.department]=(counts[p.department]||0)+1}); return counts}
+function filteredPatients(){const q=$('patientSearch').value.trim().toLowerCase(); return state.allPatients.filter(p=>{const deptOk=state.selectedDepartment==='All'||p.department===state.selectedDepartment; const hay=[p.name,p.department,p.symptoms,p.assignedDoctor,p.selectedHospitalName,p.hospitalName,p.phone,p.email].join(' ').toLowerCase(); return deptOk && (!q || hay.includes(q));});}
+function getAccounts(){try{return JSON.parse(localStorage.getItem('urbanflowHospitalAccounts')||'[]')}catch{return []}}
+function saveAccounts(accounts){localStorage.setItem('urbanflowHospitalAccounts', JSON.stringify(accounts))}
+function setAuthTab(which){$('tabLogin').classList.toggle('active',which==='login'); $('tabSignup').classList.toggle('active',which==='signup'); $('loginPanel').classList.toggle('active',which==='login'); $('signupPanel').classList.toggle('active',which==='signup');}
+async function loadHospitals(){try{const res=await fetch(`${API_BASE}/external-hospitals/all`); const hospitals=await res.json(); state.allHospitals=Array.isArray(hospitals)?hospitals:[]; const options=state.allHospitals.map(h=>`<option value="${h.name}">${h.name}</option>`).join(''); $('hospitalPicker').innerHTML=options||'<option value="">No hospitals found</option>'; $('loginHospital').innerHTML=options||'<option value="">No hospitals found</option>'; $('signupHospital').innerHTML=options||'<option value="">No hospitals found</option>'; if(!state.selectedHospitalName && state.allHospitals.length) state.selectedHospitalName=state.allHospitals[0].name; $('hospitalPicker').value=state.selectedHospitalName||''; $('loginHospital').value=state.selectedHospitalName||''; $('signupHospital').value=state.selectedHospitalName||''; $('hospitalTitle').textContent=state.selectedHospitalName||'Select Hospital'; $('settingsHospital').textContent=state.selectedHospitalName||'-';}catch(err){console.error(err); $('hospitalPicker').innerHTML='<option value="">Failed to load hospitals</option>'; $('loginHospital').innerHTML='<option value="">Failed to load hospitals</option>'; $('signupHospital').innerHTML='<option value="">Failed to load hospitals</option>';}}
+async function loadPatients(){if(!state.selectedHospitalName){state.allPatients=[]; renderAll(); return;} let url=`${API_BASE}/patients/by-selected-hospital/${encodeURIComponent(state.selectedHospitalName)}`; if(state.selectedDepartment!=='All') url+=`?department=${encodeURIComponent(state.selectedDepartment)}`; try{const res=await fetch(url); const patients=await res.json(); state.allPatients=Array.isArray(patients)?patients:[]; renderAll();}catch(err){console.error(err); state.allPatients=[]; renderAll();}}
+function renderKPIs(patients){const emergency=patients.filter(p=>(p.priority||'').toLowerCase()==='emergency').length; const waiting=patients.filter(p=>(p.status||'waiting')==='waiting').length; const inConsult=patients.filter(p=>p.status==='in_consultation').length; const completed=patients.filter(p=>p.status==='completed').length; const activeDepartments=new Set(patients.map(p=>p.department).filter(Boolean)).size||0; $('kpiWaiting').textContent=waiting; $('kpiEmergency').textContent=emergency; $('kpiDoctors').textContent=6; $('kpiWait').textContent=patients.length?`${Math.max(12,12+patients.length*2)} min`:'0 min'; $('kpiDepartments').textContent=activeDepartments||6; $('kpiCompleted').textContent=completed; $('summaryVisited').textContent=patients.length; $('summaryNew').textContent=waiting+inConsult; $('summaryEmergency').textContent=emergency; $('summaryDischarged').textContent=completed; $('sidebarAlertCount').textContent=emergency; $('topAlertDot').textContent=emergency; $('emergencyCountPill').textContent=`${emergency} Critical`; $('patientsCountPill').textContent=`${patients.length} Patients`; $('queueCountPill').textContent=`${waiting+inConsult} In Queue`;}
+function renderIncoming(patients){$('incomingPatients').innerHTML=patients.length?patients.slice(0,5).map((p,idx)=>`<div class="incoming-row"><div class="incoming-profile"><div class="avatar">${initials(p.name)}</div><div><strong>${p.name}</strong><div class="tiny muted">${p.age||'-'} Years, ${p.gender||'-'}</div></div></div><div><span class="severity ${severityClass(p.priority)}">${(p.priority||'normal').toLowerCase()==='emergency'?'High':idx%2?'Medium':'Low'}</span></div><div><div style="font-weight:800">${p.department||'General Medicine'}</div><div class="tiny muted">${(p.symptoms||'').slice(0,38)||'No symptoms'}${(p.symptoms||'').length>38?'…':''}</div></div><div><span class="token">T${String(p.tokenNumber||idx+1).padStart(4,'0')}</span></div><div class="tiny muted">${p.selectedHospitalName||p.hospitalName||state.selectedHospitalName}</div></div>`).join(''):'<div class="empty">No patients found for this hospital.</div>';}
+function renderQueueOverview(patients){const counts=deptCounts(patients); $('queueLegend').innerHTML=departmentOrder.map((dept,idx)=>`<div class="legend-item"><span><span class="dotx" style="background:${colors[idx]}"></span>${dept}</span><span>${counts[dept]||0}</span></div>`).join(''); $('donutTotal').textContent=patients.length; $('queueDeptLabel').textContent=state.selectedDepartment==='All'?'All Departments':state.selectedDepartment;}
+function renderAlerts(patients){const alerts=patients.filter(p=>(p.priority||'').toLowerCase()==='emergency').slice(0,8); const html=alerts.length?alerts.map(p=>`<div class="alert-row"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><strong>${p.name}</strong><div class="tiny muted">${p.department} • Token ${p.tokenNumber||'-'}</div><div class="tiny muted" style="margin-top:4px">${(p.symptoms||'').slice(0,60)}</div></div><span class="severity high">Emergency</span></div></div>`).join(''):'<div class="empty">No active emergency alerts.</div>'; $('emergencyAlerts').innerHTML=html; $('alertCenterList').innerHTML=html;}
+function renderDeptTiles(patients){const counts=deptCounts(patients); $('deptTiles').innerHTML=departmentOrder.map(dept=>`<div class="dept-tile"><div style="font-size:34px">${deptIcon[dept]}</div><strong>${dept}</strong><div class="tiny muted">${counts[dept]||0} in queue</div></div>`).join(''); $('departmentOperations').innerHTML=departmentOrder.map(dept=>`<div class="dept-row"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>${dept}</strong><div class="tiny muted">Current queue and staffing for ${dept}</div></div><div><span class="token">${counts[dept]||0} patients</span></div></div></div>`).join('');}
+function renderActivity(patients){const sorted=[...patients].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0)).slice(0,6); $('activityFeed').innerHTML=sorted.length?sorted.map((p,idx)=>`<div class="activity-item"><small>${new Date(p.createdAt||Date.now()-idx*600000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small><div>Patient <strong style="color:var(--blue)">${p.name}</strong> is in <strong style="color:var(--blue)">${p.department}</strong></div></div>`).join(''):'<div class="empty">No activity yet.</div>';}
+function renderPatientsPage(patients){$('patientDetailsList').innerHTML=patients.length?patients.map((p,idx)=>`<div class="patient-card"><div><div class="patient-head"><div class="avatar">${initials(p.name)}</div><div><h3 style="margin:0">${p.name}</h3><div class="tiny muted">${p.age||'-'} yrs • ${p.gender||'-'}</div><div style="margin-top:6px"><span class="severity ${severityClass(p.priority)}">${(p.priority||'normal').toLowerCase()==='emergency'?'Severe':idx%2?'Moderate':'Mild'}</span></div></div><div class="token">T${String(p.tokenNumber||idx+1).padStart(4,'0')}</div></div><div><strong>Symptoms</strong></div><div style="margin-top:8px">${(p.symptoms||'').split(',').map(s=>s.trim()).filter(Boolean).slice(0,6).map(sym=>`<span class="symptom-chip">${sym}</span>`).join('')||'<span class="tiny muted">No symptoms recorded.</span>'}</div><div class="mini-grid" style="margin-top:12px"><div class="mini-box"><strong>Hospital</strong><div class="tiny muted">${p.selectedHospitalName||p.hospitalName||'NA'}</div></div><div class="mini-box"><strong>Assigned Doctor</strong><div class="tiny muted">${p.assignedDoctor||'Not assigned'}</div></div></div></div><div><div class="mini-box" style="margin-bottom:12px"><strong>Clinical Notes</strong><div class="tiny muted" style="margin-top:8px">${p.additionalNotes||'No additional notes provided.'}</div></div><div class="mini-box"><strong>Status</strong><div class="tiny muted" style="margin-top:8px">${(p.status||'waiting').replace('_',' ')}</div></div></div></div>`).join(''):'<div class="empty">No patients available.</div>';}
+function updatePatientStatus(id, updates, message){state.allPatients=state.allPatients.map(p=>p._id===id?{...p,...updates}:p); renderAll(); alert(message);}
+function renderQueuePage(patients){$('queueList').innerHTML=patients.length?patients.map((p,idx)=>`<div class="queue-row"><div style="display:grid;grid-template-columns:1.3fr auto;gap:12px;align-items:center"><div><strong>${p.name}</strong><div class="tiny muted">${p.department} • Token ${p.tokenNumber||'-'} • ${(p.status||'waiting').replace('_',' ')}</div><div class="tiny muted" style="margin-top:4px">Position ${idx+1} • Estimated wait ${Math.max(8,(idx+1)*7)} mins</div></div><div class="actions"><button class="btn primary queue-action" data-action="call" data-id="${p._id||''}">Call Next</button><button class="btn secondary queue-action" data-action="complete" data-id="${p._id||''}">Complete</button><button class="btn secondary queue-action" data-action="escalate" data-id="${p._id||''}">Escalate</button></div></div></div>`).join(''):'<div class="empty">No queue entries available.</div>'; document.querySelectorAll('.queue-action').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.dataset.id,action=btn.dataset.action; if(action==='call') updatePatientStatus(id,{status:'in_consultation'},'Patient moved to consultation.'); if(action==='complete') updatePatientStatus(id,{status:'completed'},'Patient marked completed.'); if(action==='escalate') updatePatientStatus(id,{priority:'emergency',department:'Emergency',status:'waiting'},'Patient escalated to Emergency.');}));}
+function renderDoctorsPage(){const hospital=state.allHospitals.find(h=>h.name===state.selectedHospitalName); const doctors=hospital?.doctors||{}; $('doctorDeptPill').textContent=state.selectedDepartment==='All'?'All Departments':state.selectedDepartment; const entries=Object.entries(doctors).filter(([dept])=>state.selectedDepartment==='All'||dept===state.selectedDepartment); $('doctorListPage').innerHTML=entries.length?entries.map(([dept,docs])=>`<div class="doctor-row"><strong>${dept}</strong><div class="tiny muted" style="margin:6px 0 10px">Doctors currently mapped for this hospital department.</div>${(docs||[]).map(doc=>`<div style="display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;margin-top:8px"><div class="avatar" style="width:36px;height:36px;font-size:12px">${initials(doc)}</div><div><strong>${doc}</strong><div class="tiny muted">${dept}</div></div><span class="severity low">On Duty</span></div>`).join('')}</div>`).join(''):'<div class="empty">No doctor mapping found for this hospital yet.</div>';}
+function renderAnalytics(patients){const counts=deptCounts(patients); $('analyticsDeptList').innerHTML=departmentOrder.map((dept,idx)=>`<div class="dept-row"><div style="display:flex;justify-content:space-between;align-items:center"><span><span class="dotx" style="background:${colors[idx]}"></span>${dept}</span><strong>${counts[dept]||0}</strong></div></div>`).join(''); const waiting=patients.filter(p=>(p.status||'waiting')==='waiting').length; const consult=patients.filter(p=>p.status==='in_consultation').length; const completed=patients.filter(p=>p.status==='completed').length; const emergency=patients.filter(p=>(p.priority||'').toLowerCase()==='emergency').length; $('analyticsInsights').innerHTML=`<div class="setting-row"><strong>Waiting Load</strong><div class="tiny muted">${waiting} patients</div></div><div class="setting-row"><strong>Consultation Load</strong><div class="tiny muted">${consult} active</div></div><div class="setting-row"><strong>Completed Today</strong><div class="tiny muted">${completed} closed</div></div><div class="setting-row"><strong>Emergency Risk</strong><div class="tiny muted">${emergency} critical cases</div></div>`;}
+function renderSettings(){$('settingsHospital').textContent=state.selectedHospitalName||'-'; $('settingsDepartment').textContent=state.selectedDepartment; $('settingsAdminEmail').textContent=state.adminEmail||'-';}
+function renderAll(){const patients=filteredPatients(); $('hospitalTitle').textContent=state.selectedHospitalName||'Select Hospital'; $('pageTitle').textContent=pageMeta[currentSection].title; $('pageSubtitle').textContent=pageMeta[currentSection].subtitle; renderKPIs(patients); renderIncoming(patients); renderQueueOverview(patients); renderAlerts(patients); renderDeptTiles(patients); renderActivity(patients); renderPatientsPage(patients); renderQueuePage(patients.filter(p=>(p.status||'waiting')!=='completed')); renderDoctorsPage(); renderAnalytics(patients); renderSettings();}
+function showSection(section){currentSection=section; document.querySelectorAll('.nav-btn[data-section]').forEach(btn=>btn.classList.toggle('active',btn.dataset.section===section)); document.querySelectorAll('.section-page').forEach(sec=>sec.classList.remove('active')); $('section-'+section).classList.add('active'); renderAll();}
+function attachNav(){document.querySelectorAll('.nav-btn[data-section]').forEach(btn=>btn.addEventListener('click',()=>showSection(btn.dataset.section)));}
+function attachAuthTabs(){$('tabLogin').addEventListener('click',()=>setAuthTab('login')); $('tabSignup').addEventListener('click',()=>setAuthTab('signup'));}
+function attachGlobalActions(){
+  $('hospitalPicker').addEventListener('change', async()=>{state.selectedHospitalName=$('hospitalPicker').value; await loadPatients();});
+  $('departmentPicker').addEventListener('change', async()=>{state.selectedDepartment=$('departmentPicker').value||'All'; await loadPatients();});
+  $('openDashboardBtn').addEventListener('click', async()=>{state.selectedHospitalName=$('hospitalPicker').value||state.selectedHospitalName; state.selectedDepartment=$('departmentPicker').value||'All'; await loadPatients(); showSection('dashboard');});
+  $('patientSearch').addEventListener('input', renderAll);
+  $('logoutBtn').addEventListener('click', ()=>{$('mainApp').classList.add('hidden'); $('authShell').classList.remove('hidden'); $('loginMsg').textContent='';});
+  $('fillDemoBtn').addEventListener('click', ()=>{const hospital=$('loginHospital').value||state.selectedHospitalName; $('loginEmail').value=`admin@${(hospital||'hospital').toLowerCase().replace(/[^a-z0-9]+/g,'')} .com`.replace(' ',''); $('loginPassword').value='admin123'; $('loginMsg').textContent='';});
+  $('signupBtn').addEventListener('click', ()=>{
+    const hospital=$('signupHospital').value, adminName=$('signupAdminName').value.trim(), email=$('signupEmail').value.trim().toLowerCase(), password=$('signupPassword').value.trim(), confirm=$('signupConfirmPassword').value.trim();
+    if(!hospital) return $('signupMsg').className='msg error', $('signupMsg').textContent='Please choose a hospital.';
+    if(!adminName||!email||!password||!confirm) return $('signupMsg').className='msg error', $('signupMsg').textContent='Please fill all sign up fields.';
+    if(password!==confirm) return $('signupMsg').className='msg error', $('signupMsg').textContent='Passwords do not match.';
+    const accounts=getAccounts();
+    const existing=accounts.find(a=>a.email===email);
+    if(existing) return $('signupMsg').className='msg error', $('signupMsg').textContent='An account with this email already exists.';
+    accounts.push({hospital, adminName, email, password});
+    saveAccounts(accounts);
+    $('signupMsg').className='msg ok'; $('signupMsg').textContent='Account created successfully. Now log in.';
+    $('loginHospital').value=hospital; $('loginEmail').value=email; $('loginPassword').value=password;
+    setAuthTab('login');
+  });
+  $('loginBtn').addEventListener('click', async()=>{
+    const hospital=$('loginHospital').value, email=$('loginEmail').value.trim().toLowerCase(), password=$('loginPassword').value.trim();
+    if(!hospital||!email||!password) return $('loginMsg').textContent='Please fill hospital, email and password.';
+    const account=getAccounts().find(a=>a.email===email && a.password===password && a.hospital===hospital);
+    if(!account) return $('loginMsg').textContent='Invalid hospital/email/password. Create account first or use the correct credentials.';
+    state.selectedHospitalName=hospital; state.adminEmail=email; state.profileName=account.adminName || 'Dr. Rahul Sharma';
+    $('profileName').textContent=state.profileName; $('hospitalPicker').value=hospital; $('authShell').classList.add('hidden'); $('mainApp').classList.remove('hidden');
+    await loadPatients(); showSection('dashboard');
+  });
+}
+socket.on('queue_updated', async()=>{if(!$('mainApp').classList.contains('hidden')) await loadPatients();});
+socket.on('new_patient', async()=>{if(!$('mainApp').classList.contains('hidden')) await loadPatients();});
+async function init(){updateClock(); setInterval(updateClock,30000); attachNav(); attachAuthTabs(); attachGlobalActions(); await loadHospitals(); showSection('dashboard');}
+init();
+</script>
+</body>
+</html>
